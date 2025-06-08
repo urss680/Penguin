@@ -1,1 +1,1 @@
-[{"role":"user","parts":[{"text":"HOLA"}]},{"role":"user","parts":[{"text":"HOLA"}]},{"role":"model","parts":[{"text":"¡Hola!"}]},{"role":"model","parts":[{"text":"¡Hola!"}]}]
+[{"role":"user","parts":[{"text":"HOLA"}]},{"role":"user","parts":[{"text":"HOLA"}]},{"role":"model","parts":[{"text":"¡Hola!"}]},{"role":"model","parts":[{"text":"¡Hola!"}]},{"role":"user","parts":[{"text":"2+4+5+657"}]},{"role":"model","parts":[{"text":"Okay, let's add those numbers:\n\n2 + 4 + 5 + 657 = 668\n\nThe answer is 668."}]}]
