@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Paint Simple</title>
+<style>
+  body, html {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #f0f0f0;
+    user-select: none;
+  }
+  #toolbar {
+    background: #333;
+    color: white;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+  }
+  #toolbar > * {
+    margin-right: 15px;
+  }
+  #canvas {
+    display: block;
+    background: white;
+    margin: 0 auto;
+    cursor: crosshair;
+    border: 1px solid #999;
+  }
+  button, select, input[type=color] {
+    padding: 5px;
+    font-size: 14px;
+  }
+  #sizeValue {
+    width: 30px;
+    text-align: center;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <label for="colorPicker">Color:</label>
+    <input type="color" id="colorPicker" value="#000000" />
+    <label for="brushSize">Tamaño:</label>
+    <input type="range" id="brushSize" min="1" max="50" value="5" />
+    <span id="sizeValue">5</span>
+    <select id="tool">
+      <option value="brush">Pincel</option>
+      <option value="eraser">Borrador</option>
+      <option value="rect">Rectángulo</option>
+      <option value="circle">Círculo</option>
+      <option value="line">Línea</option>
+    </select>
+    <button id="clear">Limpiar</button>
+    <button id="save">Guardar</button>
+  </div>
+  <canvas id="canvas" width="800" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const colorPicker = document.getElementById('colorPicker');
+  const brushSize = document.getElementById('brushSize');
+  const sizeValue = document.getElementById('sizeValue');
+  const toolSelect = document.getElementById('tool');
+  const clearBtn = document.getElementById('clear');
+  const saveBtn = document.getElementById('save');
+
+  let drawing = false;
+  let startX = 0;
+  let startY = 0;
+  let snapshot = null;
+
+  sizeValue.textContent = brushSize.value;
+
+  brushSize.addEventListener('input', () => {
+    sizeValue.textContent = brushSize.value;
+  });
+
+  function getMousePos(evt) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top,
+    };
+  }
+
+  function startDrawing(e) {
+    drawing = true;
+    const pos = getMousePos(e);
+    startX = pos.x;
+    startY = pos.y;
+    if(toolSelect.value === 'brush' || toolSelect.value === 'eraser'){
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+    } else {
+      snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  function draw(e) {
+    if(!drawing) return;
+    const pos = getMousePos(e);
+    if(toolSelect.value === 'brush') {
+      ctx.strokeStyle = colorPicker.value;
+      ctx.lineWidth = brushSize.value;
+      ctx.lineCap = 'round';
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    } else if (toolSelect.value === 'eraser') {
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = brushSize.value;
+      ctx.lineCap = 'round';
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    } else {
+      ctx.putImageData(snapshot, 0, 0);
+      ctx.strokeStyle = colorPicker.value;
+      ctx.lineWidth = brushSize.value;
+      ctx.fillStyle = colorPicker.value;
+      const width = pos.x - startX;
+      const height = pos.y - startY;
+      switch(toolSelect.value) {
+        case 'rect':
+          ctx.strokeRect(startX, startY, width, height);
+          break;
+        case 'circle': {
+          const radius = Math.sqrt(width*width + height*height);
+          ctx.beginPath();
+          ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+          ctx.stroke();
+          break;
+        }
+        case 'line': {
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(pos.x, pos.y);
+          ctx.stroke();
+          break;
+        }
+      }
+    }
+  }
+
+  function endDrawing() {
+    drawing = false;
+    ctx.closePath();
+  }
+
+  clearBtn.addEventListener('click', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  });
+
+  saveBtn.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'paint.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+
+  canvas.addEventListener('mousedown', startDrawing);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDrawing);
+  canvas.addEventListener('mouseout', endDrawing);
+</script>
+</body>
+</html>
