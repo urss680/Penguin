@@ -14,3 +14,4 @@ Prompt: "PEPA PIG", ImgBB ID: 1GRnLgSS/PEPA-PIG.jpg
 Prompt: "PEPA PIG", ImgBB ID: 4ZXVRxmM/PEPA-PIG.jpg
 Prompt: "PEPA PIG", ImgBB ID: FbpDFNzG/PEPA-PIG.jpg
 Prompt: "eurovision , mi amore", ImgBB ID: HprdkfnC/eurovision-mi-amore.jpg
+Prompt: "MAMA TE QUIERO", ImgBB ID: bj08smD1/MAMA-TE-QUIERO.jpg
