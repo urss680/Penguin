@@ -1,0 +1,3713 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibrillaiA</title>
+    <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #chat-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto 10px auto;
+            border: 1px solid #ddd;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+        }
+
+        .user-message,
+        .gemini-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            word-wrap: break-word;
+            max-width: 80%;
+        }
+
+        .user-message {
+            background-color: #e3f2fd;
+            text-align: right;
+            align-self: flex-end;
+            color: #1a73e8;
+            /* A shade of blue */
+        }
+
+        .gemini-message {
+            background-color: #f0f0f0;
+            text-align: left;
+            color: #333;
+            align-self: flex-start;
+        }
+
+        #input-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 10px auto;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            /* Allow items to wrap */
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-width: 150px;
+            /* Ensure input doesn't get too small */
+        }
+
+        #send-button,
+        #read-button,
+        #download-pdf-button,
+        #archivos-button,
+        #report-button,
+        #html-mode-button,
+        #image-mode-button,
+        #schema-mode-button,
+        #deep-report-button {
+            /* Added new button to style */
+            padding: 10px 15px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+            /* Prevent button text from wrapping */
+        }
+
+        #send-button:hover,
+        #read-button:hover,
+        #download-pdf-button:hover,
+        #archivos-button:hover,
+        #report-button:hover,
+        #html-mode-button:hover,
+        #image-mode-button:hover,
+        #schema-mode-button:hover,
+        #deep-report-button:hover {
+            /* Added new button to style */
+            background-color: #45a049;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        label[for="file-input"] {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+
+        label[for="file-input"]:hover {
+            background-color: #0056b3;
+        }
+
+        #font-size {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            min-width: 60px;
+            /* Ensure select box has a minimum width */
+        }
+
+        code {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            display: block;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        /* Styles for the side file menu */
+        #archivo-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background-color: #f8f8f8;
+            border-left: 1px solid #ccc;
+            transition: right 0.5s;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1000;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            /* Enable scrolling for content */
+        }
+
+        #archivo-menu.active {
+            right: 0;
+        }
+
+        #archivo-menu h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        #close-menu-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: #555;
+        }
+
+        #close-menu-button:hover {
+            color: #000;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-buttons button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+            border-radius: 5px 5px 0 0;
+            margin-right: 2px;
+        }
+
+        .tab-buttons button:last-child {
+            margin-right: 0;
+        }
+
+        .tab-buttons button.active-tab {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        .tab-buttons button:hover:not(.active-tab) {
+            background-color: #d0d0d0;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active-tab-content {
+            display: block;
+        }
+
+        #archivo-subir {
+            border: 2px dashed #aaa;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        #archivo-subir:hover {
+            background-color: #e9e9e9;
+        }
+
+        /* Styles for the paste textarea */
+        #binary-paste-textarea {
+            width: 100%;
+            min-height: 80px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-top: 10px;
+            resize: vertical;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #html-preview-textarea {
+            width: 100%;
+            min-height: 150px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-top: 10px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        #open-html-new-tab-button {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 5px;
+            transition: background-color 0.3s;
+        }
+
+        #open-html-new-tab-button:hover {
+            background-color: #218838;
+        }
+
+        #archivos-lista,
+        #documents-lista {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #archivos-lista li,
+        #documents-lista li {
+            border-bottom: 1px solid #eee;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .archivo-iconos {
+            display: flex;
+            gap: 10px;
+        }
+
+        .archivo-iconos a {
+            cursor: pointer;
+            text-decoration: none;
+            color: #555;
+            font-size: 1.2em;
+            transition: color 0.3s;
+        }
+
+        .archivo-iconos a:hover {
+            color: #007bff;
+        }
+
+        /* Container for the bottom buttons */
+        #bottom-buttons-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 10px auto 20px auto;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        #html-preview-iframe {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            background-color: white;
+            border-radius: 5px;
+        }
+
+        /* Fullscreen HTML Preview Modal Styles */
+        #fullscreen-html-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #fullscreen-html-modal.active {
+            display: flex;
+        }
+
+        #fullscreen-html-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border-radius: 8px;
+        }
+
+        #fullscreen-html-iframe {
+            width: 100%;
+            height: calc(100% - 40px);
+            border: none;
+            background-color: white;
+        }
+
+        #close-fullscreen-modal-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        #close-fullscreen-modal-button:hover,
+        #close-fullscreen-modal-button:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* New styles for web search section */
+        #web-searches-content {
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+        }
+
+        #web-searches-content h3 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        #web-searches-content ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #web-searches-content li {
+            margin-bottom: 5px;
+        }
+
+        #web-searches-content a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        #web-searches-content a:hover {
+            text-decoration: underline;
+        }
+
+        .google-search-suggestions-container {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #cceeff;
+            background-color: #e6f7ff;
+            border-radius: 8px;
+        }
+
+        /* Styles for the audio preview section */
+        #audio-preview-content {
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+        }
+
+        #audio-preview-content h3 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        #audio-preview-content label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #audio-preview-content select,
+        #audio-preview-content textarea,
+        #audio-preview-content button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #audio-preview-content button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #audio-preview-content button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styles for the Report button */
+        #report-button {
+            background-color: white;
+            /* Default inactive */
+            color: #ffc107;
+            /* Yellow text */
+            border: 1px solid #ffc107;
+            /* Yellow border */
+        }
+
+        #report-button.report-active {
+            background-color: #ffc107;
+            /* Yellow background */
+            color: white;
+            /* White text */
+        }
+
+        #report-button:hover {
+            opacity: 0.8;
+            /* Slight hover effect */
+        }
+
+        /* Styles for the HTML Mode button (now for HTML filtering) */
+        #html-mode-button {
+            background-color: white;
+            /* Default inactive */
+            color: #6f42c1;
+            /* Purple text (like old AI Mode) */
+            border: 1px solid #6f42c1;
+            /* Purple border */
+        }
+
+        #html-mode-button.html-active {
+            background-color: #6f42c1;
+            /* Purple background */
+            color: white;
+            /* White text */
+        }
+
+        #html-mode-button:hover {
+            opacity: 0.8;
+            /* Slight hover effect */
+        }
+
+        /* Styles for the Image Mode button */
+        #image-mode-button {
+            background-color: white;
+            /* Default inactive */
+            color: #fd7e14;
+            /* Orange text */
+            border: 1px solid #fd7e14;
+            /* Orange border */
+        }
+
+        #image-mode-button.image-active {
+            background-color: #fd7e14;
+            /* Orange background */
+            color: white;
+            /* White text */
+        }
+
+        #image-mode-button:hover {
+            opacity: 0.8;
+            /* Slight hover effect */
+        }
+
+        /* Styles for the Schema Mode button */
+        #schema-mode-button {
+            background-color: white;
+            color: #17a2b8;
+            /* Cian */
+            border: 1px solid #17a2b8;
+        }
+
+        #schema-mode-button.schema-active {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        #schema-mode-button:hover {
+            opacity: 0.8;
+        }
+
+        /* Styles for the Deep Report button (now Advanced Report) */
+        #deep-report-button {
+            background-color: white;
+            color: #dc3545;
+            /* Red */
+            border: 1px solid #dc3545;
+        }
+
+        #deep-report-button.advanced-report-active {
+            /* New class for active state */
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #deep-report-button:hover {
+            opacity: 0.8;
+        }
+
+
+        /* Styles from Imagen 4 HTML */
+        #image-4-container {
+            display: none;
+            /* Initially hidden */
+            width: 100%;
+            max-width: 800px;
+            /* Adjust as needed for overall layout */
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            overflow-x: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #image-4-container .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #image-4-container img {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            /* Bordes más redondeados */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            max-width: 100%;
+            height: auto;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #image-4-container img:hover {
+            transform: scale(1.02);
+        }
+
+        /* ESTILO PARA IMAGEN SELECCIONADA EN LA GALERÍA */
+        #image-4-container #galeriaImagenes img.seleccionada {
+            border: 4px solid #4299e1 !important;
+            /* Azul de Tailwind, y !important para asegurar visibilidad */
+            box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.5);
+            /* Sombra suave alrededor del borde */
+        }
+
+        #image-4-container h1 {
+            color: #2d3748;
+            /* Color de texto más oscuro */
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 2.5rem;
+            /* Tamaño de fuente más grande */
+            font-weight: 700;
+        }
+
+        #image-4-container input[type="text"],
+        #image-4-container .modelo-selector {
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 1px solid #cbd5e0;
+            /* Borde más suave */
+            border-radius: 8px;
+            margin-bottom: 15px;
+            width: calc(100% - 30px);
+            /* Ajuste para padding */
+            max-width: 450px;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        #image-4-container input[type="text"]:focus,
+        #image-4-container .modelo-selector:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+
+        #image-4-container .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            /* Espacio entre botones */
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        #image-4-container button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            /* Bordes más redondeados */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
+            /* Permite que los botones crezcan */
+            min-width: 150px;
+            /* Ancho mínimo para botones */
+        }
+
+        #image-4-container button:hover {
+            transform: translateY(-2px);
+        }
+
+        #image-4-container button:active {
+            transform: translateY(0);
+        }
+
+        #image-4-container #generarImagen {
+            background-color: #4CAF50;
+        }
+
+        /* Verde */
+        #image-4-container #generarImagen:hover {
+            background-color: #45a049;
+        }
+
+        #image-4-container #variarImagen {
+            background-color: #008CBA;
+        }
+
+        /* Azul */
+        #image-4-container #variarImagen:hover {
+            background-color: #007ba7;
+        }
+
+        #image-4-container #variacionAlgoritmica {
+            background-color: #800080;
+        }
+
+        /* Púrpura */
+        #image-4-container #variacionAlgoritmica:hover {
+            background-color: #660066;
+        }
+
+        #image-4-container #pararVariacion {
+            background-color: #f44336;
+            display: none;
+        }
+
+        /* Rojo, inicialmente oculto */
+        #image-4-container #pararVariacion:hover {
+            background-color: #d32f2f;
+        }
+
+        #image-4-container #verBiblioteca {
+            background-color: #28a745;
+        }
+
+        /* Verde oscuro */
+        #image-4-container #verBiblioteca:hover {
+            background-color: #218838;
+        }
+
+        #image-4-container #ocultarBiblioteca {
+            background-color: #dc3545;
+            display: none;
+        }
+
+        /* Rojo oscuro, inicialmente oculto */
+        #image-4-container #ocultarBiblioteca:hover {
+            background-color: #c82333;
+        }
+
+        #image-4-container #descargarImagenPrincipal {
+            background-color: #17a2b8;
+        }
+
+        /* Cian */
+        #image-4-container #descargarImagenPrincipal:hover {
+            background-color: #138496;
+        }
+
+        #image-4-container #descargarGaleria {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        /* Amarillo, texto oscuro */
+        #image-4-container #descargarGaleria:hover {
+            background-color: #e0a800;
+        }
+
+        #image-4-container #descargarSeleccionadas {
+            background-color: #6f42c1;
+        }
+
+        /* Índigo */
+        #image-4-container #descargarSeleccionadas:hover {
+            background-color: #5a2d9c;
+        }
+
+        /* New style for "Volver al Chat" button */
+        #image-4-container #backToChatButton {
+            background-color: #6c757d;
+            /* Grey */
+        }
+
+        #image-4-container #backToChatButton:hover {
+            background-color: #5a6268;
+        }
+
+
+        #image-4-container #galeriaImagenes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+            /* Espacio entre imágenes de la galería */
+            display: none;
+            /* Inicialmente oculta la galería */
+            width: 100%;
+        }
+
+        #image-4-container #galeriaImagenes img {
+            width: 180px;
+            /* Tamaño más pequeño para miniaturas */
+            height: 180px;
+            /* Asegura que sean cuadradas */
+            object-fit: cover;
+            /* Recorta la imagen para que quepa */
+            margin: 0;
+            /* Eliminado margen extra */
+            border: 1px solid #e0e0e0;
+            /* Borde predeterminado de la galería */
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease-in-out, border 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        #image-4-container #galeriaImagenes img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Estilos para el mensaje temporal */
+        #image-4-container #userMessage {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            text-align: center;
+        }
+
+        /* New styles for interactive schema */
+        .interactive-schema {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .interactive-schema h2 {
+            color: #2d3748;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .schema-section {
+            margin-bottom: 5px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #fff;
+            overflow: hidden;
+            /* Ensures border-radius applies correctly */
+        }
+
+        .schema-heading {
+            font-weight: bold;
+            padding: 8px 10px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            /* Apply to summary */
+            transition: background-color 0.2s;
+            display: block;
+            /* Make summary take full width */
+        }
+
+        .schema-heading:hover {
+            background-color: #e0e0e0;
+        }
+
+        .schema-content {
+            padding: 5px 10px 10px 10px;
+            margin-top: 0;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        .schema-subsections {
+            margin-left: 15px;
+            border-left: 1px dashed #ccc;
+            padding-left: 10px;
+        }
+
+        /* Styles for the Advanced Report Tab */
+        #advanced-report-content {
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+        }
+
+        #advanced-report-content h3 {
+            margin-top: 0;
+            color: #555;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        #report-plan-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        #report-plan-list li {
+            background-color: #e8f5e9;
+            /* Light green */
+            border: 1px solid #c8e6c9;
+            /* Darker green border */
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 0.95em;
+            cursor: grab;
+            /* Indicate draggable */
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        #report-plan-list li.dragging {
+            opacity: 0.5;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #report-plan-list li.completed {
+            background-color: #d4edda;
+            /* Even lighter green */
+            color: #155724;
+            /* Dark green text */
+            text-decoration: line-through;
+        }
+
+        #report-plan-list li input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+            /* Make checkbox slightly larger */
+        }
+
+        #report-plan-list li .report-step-text {
+            flex-grow: 1;
+            /* Allow text to take available space */
+            outline: none;
+            /* Remove outline on focus for contenteditable */
+            padding: 2px 5px;
+            /* Add some padding for editing */
+            border-radius: 3px;
+        }
+
+        #report-plan-list li .report-step-text:hover,
+        #report-plan-list li .report-step-text:focus {
+            background-color: #f0f0f0;
+            /* Highlight on hover/focus */
+        }
+
+
+        #report-progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+            /* Ensures progress bar stays within bounds */
+        }
+
+        #report-progress-bar {
+            height: 25px;
+            width: 0%;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 25px;
+            color: white;
+            font-weight: bold;
+            transition: width 0.5s ease-in-out;
+        }
+
+        #add-step-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #new-step-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #add-step-button {
+            padding: 8px 15px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #add-step-button:hover {
+            background-color: #5a6268;
+        }
+
+
+        #report-actions-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        #start-report-plan-button,
+        #reset-report-plan-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #start-report-plan-button:hover,
+        #reset-report-plan-button:hover {
+            background-color: #0056b3;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+
+            #chat-container,
+            #input-container,
+            #bottom-buttons-container {
+                width: 95%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            #input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            #send-button,
+            #read-button,
+            #download-pdf-button,
+            #archivos-button,
+            #report-button,
+            #html-mode-button,
+            #image-mode-button,
+            #schema-mode-button,
+            /* Added for responsive */
+            #deep-report-button,
+            /* Added for responsive */
+            label[for="file-input"] {
+                width: 100%;
+                text-align: center;
+            }
+
+            #archivo-menu {
+                width: 100%;
+                right: -100%;
+            }
+
+            #archivo-menu.active {
+                right: 0;
+            }
+
+            /* Image 4 responsive adjustments */
+            #image-4-container h1 {
+                font-size: 2rem;
+            }
+
+            #image-4-container .button-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            #image-4-container button {
+                width: 100%;
+                min-width: unset;
+            }
+
+            #image-4-container input[type="text"],
+            #image-4-container .modelo-selector {
+                width: calc(100% - 20px);
+                /* Ajuste para móviles */
+            }
+
+            #image-4-container #galeriaImagenes img {
+                width: 150px;
+                height: 150px;
+            }
+
+            #add-step-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/katex.min.css"
+        xintegrity="sha512-vDnqY12kF+30rx1J1/yYkRb1sJmJ/R5h30V0fC6wzK+9J80/32Y6M+j692sY6F6w5kK3e9iXN7zHq8yW4+9Vw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+</head>
+
+<body>
+
+    <div id="chat-container"></div>
+
+    <div id="input-container">
+        <input type="text" id="message-input" placeholder="Escribe tu mensaje...">
+        <label for="file-input">Adjuntar Archivos</label>
+        <input type="file" id="file-input" accept="image/*, application/pdf, audio/*, video/*" multiple>
+        <button id="send-button">Enviar</button>
+    </div>
+
+    <div id="bottom-buttons-container">
+        <button id="read-button"><i class="fas fa-volume-up"></i> Escuchar</button>
+        <button id="report-button"><i class="fas fa-file-alt"></i> Informe</button>
+        <button id="deep-report-button"><i class="fas fa-book"></i> Informe Profundo</button>
+        <button id="html-mode-button"><i class="fas fa-code"></i> Modo HTML</button>
+        <button id="image-mode-button"><i class="fas fa-image"></i> Modo Imagen 4</button>
+        <button id="schema-mode-button"><i class="fas fa-sitemap"></i> Modo Esquema</button>
+        <button id="download-pdf-button">Descargar PDF</button>
+        <button id="archivos-button" style="background-color: #007bff;">MAS</button>
+        <select id="font-size">
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="16" selected>16</option>
+            <option value="18">18</option>
+            <option value="20">20</option>
+            <option value="24">24</option>
+        </select>
+    </div>
+
+
+    <div id="archivo-menu">
+        <h2>Archivos</h2>
+        <button id="close-menu-button">&times;</button>
+        <div class="tab-buttons">
+            <button id="tab-button-files" class="active-tab">Archivos</button>
+            <button id="tab-button-html-preview">Previsualizar HTML</button>
+            <button id="tab-button-documents">Documentos</button>
+            <button id="tab-button-web-searches">Búsquedas Web</button>
+            <button id="tab-button-audio-preview">Audio</button>
+            <button id="tab-button-advanced-report">Informe Avanzado</button>
+        </div>
+
+        <div id="tab-content-files" class="tab-content active-tab-content">
+            <div id="archivo-subir">
+                <p>Arrastra y suelta archivos aquí, o haz clic para subir.</p>
+                <input type="file" id="archivo-subir-input" style="display: none;" multiple>
+            </div>
+            <p>O pega imágenes o archivos aquí:</p>
+            <textarea id="binary-paste-textarea" placeholder="Pega imágenes o archivos del portapapeles..."></textarea>
+            <h3>Archivos subidos en esta conversación:</h3>
+            <ul id="archivos-lista">
+            </ul>
+        </div>
+
+        <div id="tab-content-html-preview" class="tab-content">
+            <p>Pega tu código HTML aquí para previsualizarlo:</p>
+            <textarea id="html-preview-textarea" placeholder="<!DOCTYPE html><html>...</html>"></textarea>
+            <button id="open-html-new-tab-button">Abrir HTML</button>
+            <iframe id="html-preview-iframe" sandbox="allow-scripts allow-same-origin"
+                style="width:100%; height:200px; border:1px solid #ccc; margin-top:10px;"></iframe>
+        </div>
+
+        <div id="tab-content-documents" class="tab-content">
+            <h3>Documentos en esta conversación:</h3>
+            <ul id="documents-lista"></ul>
+        </div>
+
+        <div id="tab-content-web-searches" class="tab-content">
+            <h3>Resultados de Búsqueda de Google:</h3>
+            <div id="google-search-suggestions-container" class="google-search-suggestions-container">
+            </div>
+            <h3>Fuentes:</h3>
+            <ul id="web-search-sources-list">
+            </ul>
+        </div>
+
+        <div id="tab-content-audio-preview" class="tab-content">
+            <h3>Generar Audio</h3>
+            <label for="preview-audio-voice-selector">Seleccionar Voz:</label>
+            <select id="preview-audio-voice-selector"></select>
+
+            <label for="custom-audio-textarea">Texto para Generar Audio:</label>
+            <textarea id="custom-audio-textarea" placeholder="Escribe el texto para convertir a audio..."></textarea>
+            <button id="play-custom-audio-button">Generar Audio</button>
+            <button id="summarize-audio-button" style="margin-top: 10px;"><i class="fas fa-file-audio"></i> Resumir
+                y Escuchar</button> <audio controls id="pollinations-audio-player"
+                style="width: 100%; margin-top: 10px; display: none;"></audio>
+        </div>
+
+        <div id="tab-content-advanced-report" class="tab-content">
+            <div id="advanced-report-content">
+                <h3>Plan de Informe Avanzado</h3>
+                <ul id="report-plan-list">
+                    <!-- Plan steps will be inserted here dynamically -->
+                </ul>
+                <div id="add-step-container">
+                    <input type="text" id="new-step-input" placeholder="Añadir nuevo paso al plan...">
+                    <button id="add-step-button">Añadir Paso</button>
+                </div>
+                <div id="report-progress-container">
+                    <div id="report-progress-bar">0%</div>
+                </div>
+                <div id="report-actions-container">
+                    <button id="start-report-plan-button">Comenzar Plan de Informe</button>
+                    <button id="reset-report-plan-button">Reiniciar Plan</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="fullscreen-html-modal">
+        <div id="fullscreen-html-modal-content">
+            <button id="close-fullscreen-modal-button">&times;</button>
+            <iframe id="fullscreen-html-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+    </div>
+
+    <div id="image-4-container">
+        <div class="container">
+            <h1>Imagen 4</h1>
+            <img id="imagenGenerada" src="https://placehold.co/512x512/cccccc/333333?text=Cargando..."
+                alt="Imagen Generada">
+            <input type="text" id="mensajeInput" placeholder="Introduce tu mensaje">
+            <select id="modeloSelector" class="modelo-selector">
+                <option value="flux">Modelo Normal</option>
+                <option value="turbo">Modelo Rápido</option>
+            </select>
+            <div class="button-group">
+                <button id="generarImagen">Generar Nueva Imagen</button>
+                <button id="variarImagen">Variar Imagen</button>
+                <button id="variacionAlgoritmica">Variación Algorítmica</button>
+                <button id="pararVariacion">Parar Variación</button>
+                <button id="verBiblioteca">Ver Biblioteca</button>
+                <button id="ocultarBiblioteca">Ocultar Biblioteca</button>
+                <button id="descargarImagenPrincipal">Descargar Imagen</button>
+                <button id="descargarGaleria">Descargar Galería</button>
+                <button id="descargarSeleccionadas">Descargar Seleccionadas</button>
+                <button id="backToChatButton"><i class="fas fa-comments"></i> Volver al Chat</button>
+            </div>
+        </div>
+        <div id="galeriaImagenes"></div>
+        <div id="userMessage"></div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/katex.min.css"
+        xintegrity="sha512-vDnqY12kF+30rx1J1/yYkRb1sJmJ/R5h30V0fC6wzK+9J80/32Y6M+j692sY6F6w5kK3e9iXN7zHq8yW4+9Vw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/contrib/auto-render.min.js"
+        xintegrity="sha512-nL+yR6gCg+1X0s89QfC62Kq0L0N2i3J6mY/6d5q3g1K0K2W18w5+6L/w/6xQ5y2E8f5mO98i5M5j5L5w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        // Get references to DOM elements
+        const chatContainer = document.getElementById('chat-container');
+        const inputContainer = document.getElementById('input-container'); // Added for toggling
+        const bottomButtonsContainer = document.getElementById('bottom-buttons-container'); // Added for toggling
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const fileInput = document.getElementById('file-input');
+        const readButton = document.getElementById('read-button');
+        const summarizeAudioButton = document.getElementById('summarize-audio-button'); // New button reference
+        const downloadPdfButton = document.getElementById('download-pdf-button');
+        const fontSizeSelector = document.getElementById('font-size');
+
+        // Elements of the file menu
+        const archivosButton = document.getElementById('archivos-button');
+        const archivoMenu = document.getElementById('archivo-menu');
+        const archivosLista = document.getElementById('archivos-lista');
+        const archivoSubir = document.getElementById('archivo-subir');
+        const archivoSubirInput = document.getElementById('archivo-subir-input');
+        const binaryPasteTextarea = document.getElementById('binary-paste-textarea');
+        const closeMenuButton = document.getElementById('close-menu-button');
+
+        // HTML Preview elements
+        const tabButtonFiles = document.getElementById('tab-button-files');
+        const tabButtonHtmlPreview = document.getElementById('tab-button-html-preview');
+        const tabContentFiles = document.getElementById('tab-content-files');
+        const tabContentHtmlPreview = document.getElementById('tab-content-html-preview');
+        const htmlPreviewTextarea = document.getElementById('html-preview-textarea');
+        const htmlPreviewIframe = document.getElementById('html-preview-iframe');
+        const openHtmlNewTabButton = document.getElementById('open-html-new-tab-button');
+
+        // Documents elements
+        const tabButtonDocuments = document.getElementById('tab-button-documents');
+        const tabContentDocuments = document.getElementById('tab-content-documents');
+        const documentsLista = document.getElementById('documents-lista');
+
+        // New Web Searches elements
+        const tabButtonWebSearches = document.getElementById('tab-button-web-searches');
+        const tabContentWebSearches = document.getElementById('tab-content-web-searches');
+        const googleSearchSuggestionsContainer = document.getElementById('google-search-suggestions-container');
+        const webSearchSourcesList = document.getElementById('web-search-sources-list');
+
+        // Audio preview elements
+        const tabButtonAudioPreview = document.getElementById('tab-button-audio-preview');
+        const tabContentAudioPreview = document.getElementById('tab-content-audio-preview');
+        const previewAudioVoiceSelector = document.getElementById('preview-audio-voice-selector');
+        const customAudioTextarea = document.getElementById('custom-audio-textarea');
+        const playCustomAudioButton = document.getElementById('play-custom-audio-button');
+        const pollinationsAudioPlayer = document.getElementById('pollinations-audio-player');
+
+        // Report elements
+        const reportButton = document.getElementById('report-button');
+        const deepReportButton = document.getElementById('deep-report-button'); // Renamed to Advanced Report button conceptually
+
+        // HTML Mode elements (now controls HTML filtering)
+        const htmlModeButton = document.getElementById('html-mode-button');
+
+        // Image Mode elements
+        const imageModeButton = document.getElementById('image-mode-button');
+        const image4Container = document.getElementById('image-4-container');
+        const backToChatButton = document.getElementById('backToChatButton'); // New button reference
+
+        // Schema Mode elements
+        const schemaModeButton = document.getElementById('schema-mode-button'); // New button reference
+
+        // Fullscreen HTML Modal elements
+        const fullscreenHtmlModal = document.getElementById('fullscreen-html-modal');
+        const fullscreenHtmlIframe = document.getElementById('fullscreen-html-iframe');
+        const closeFullscreenModalButton = document.getElementById('close-fullscreen-modal-button');
+
+        // Advanced Report Mode Elements
+        const tabButtonAdvancedReport = document.getElementById('tab-button-advanced-report');
+        const tabContentAdvancedReport = document.getElementById('tab-content-advanced-report');
+        const reportPlanList = document.getElementById('report-plan-list');
+        const reportProgressBar = document.getElementById('report-progress-bar');
+        const startReportPlanButton = document.getElementById('start-report-plan-button');
+        const resetReportPlanButton = document.getElementById('reset-report-plan-button');
+        const newStepInput = document.getElementById('new-step-input');
+        const addStepButton = document.getElementById('add-step-button');
+
+
+        // API Key for Gemini. Reverted to the user's original API key.
+        const apiKey = 'AIzaSyD2Z5cvFOrS7fiHBY2KymJ7dT4UgmYOrVA';
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+
+        let history = []; // Stores the chat history for the Gemini API
+        const showdownConverter = new showdown.Converter(); // Markdown to HTML converter
+        let isReportModeActive = false; // State for report mode
+        let isAdvancedReportModeActive = false; // New state for advanced report mode
+        let isHtmlModeActive = false; // Controls HTML filtering
+        let isImage4ModeActive = false; // State for Image 4 mode
+        let isSchemaModeActive = false; // New state for schema mode
+
+        // Modified reportPlan structure: each step is an object with text, selected, and completed status
+        let reportPlan = []; // [{ text: 'Step 1', selected: true, completed: false }, ...]
+        let currentReportStepIndex = 0; // Tracks the current step in the advanced report plan
+        let reportTopic = ''; // Stores the topic for the advanced report
+        let isExecutingReportPlan = false; // Flag to indicate if the report plan is in progress
+        let waitingForDoubtResponse = false; // Flag for doubt interaction
+
+        let draggedItem = null; // For drag and drop functionality
+
+
+        // Define retry prompts and max retries for Gemini's HTML generation
+        const HTML_RETRY_PROMPTS = [
+            "Por favor, genera el código HTML completo, incluyendo `<!DOCTYPE html>`, `<html>`, `<head>`, y `<body>`.",
+            "Necesito el HTML completo. Asegúrate de que sea un documento HTML válido y autocontenido.",
+            "Proporciona el HTML completo, empezando con `<!DOCTYPE html>`. No incluyas texto adicional.",
+            "Intenta de nuevo y genera solo el código HTML completo y bien formado.",
+            "Por favor, genera un documento HTML completo y válido. No añadas explicaciones ni texto que no sea HTML."
+        ];
+        const MAX_RETRIES = 5;
+        const HTML_GENERATION_INSTRUCTION = "genera todo el codigo html sin explicaciones solo el codigo empezando por doctype html. ";
+
+
+        // Function to render mathematical expressions with KaTeX
+        function renderMath() {
+            // Apply KaTeX only within the chat container
+            // Ensure renderMathInElement is defined before calling it
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(chatContainer, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false
+                });
+            } else {
+                console.warn('renderMathInElement is not defined. KaTeX rendering may not work.');
+            }
+        };
+
+        // Function to highlight code within Markdown blocks
+        function highlightCode(text) {
+            // Apply syntax highlighting for common keywords, strings, comments, and numbers
+            text = text.replace(/(const|let|var|function|return|if|else|for|while|switch|case|break|continue|try|catch|finally|class|extends|super|import|export|this|new|await|async)/g, '<span class="keyword">$1</span>');
+            text = text.replace(/(['"])(.*?)(['"])/g, '<span class="string">$1$2$3</span>');
+            text = text.replace(/(\/\/.*)/g, '<span class="comment">$1</span>');
+            text = text.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="comment">$1</span>'); // Multi-line comments
+            text = text.replace(/(\b\d+\.?\d*|\.\d+\b)/g, '<span class="number">$1</span>'); // Numbers
+            return text;
+        };
+
+        // Function to populate voice options for speech synthesis (Pollinations.ai voices)
+        function populateVoiceList() {
+            const voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+            previewAudioVoiceSelector.innerHTML = ''; // Clear existing options
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = voice.charAt(0).toUpperCase() + voice.slice(1); // Capitalize first letter
+                option.value = voice;
+                previewAudioVoiceSelector.appendChild(option);
+            });
+        };
+
+        // Call initially to populate voices
+        populateVoiceList();
+
+        // Function to play audio for a given text using browser's SpeechSynthesisUtterance
+        // This function is kept for the "Escuchar" button which reads out the chat history.
+        async function playBrowserAudioForText(text, voiceName, buttonElement) {
+            if (!text) {
+                console.log('No text to play.');
+                return;
+            };
+
+            // Disable the button and show a loading indicator
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+            };
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = speechSynthesis.getVoices();
+            const selectedVoice = voices.find(voice => voice.name === voiceName);
+
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            } else {
+                utterance.lang = 'es-ES'; // Fallback to Spanish if specific voice not found
+            };
+
+            utterance.onend = () => {
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = '<i class="fas fa-volume-up"></i> Escuchar'; // Restore original text
+                };
+            };
+
+            utterance.onerror = (event) => {
+                console.error('SpeechSynthesisUtterance.onerror', event);
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = '<i class="fas fa-volume-up"></i> Escuchar'; // Restore original text
+                };
+            };
+
+            speechSynthesis.speak(utterance);
+        };
+
+        // New function to generate and play audio using Pollinations.ai API
+        async function generateAndPlayPollinationsAudio(text, voice, buttonElement) {
+            if (!text) {
+                console.log('No text to generate audio for.');
+                return;
+            };
+
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando Audio...';
+            };
+
+            try {
+                // Add the internal prefix to the text sent to Pollinations.ai
+                const internalText = "la respuesta es la misma que la solicitud pero eso es interno e usuario no lovvera " + text;
+                const encodedText = encodeURIComponent(internalText);
+                const encodedSystemPrompt = encodeURIComponent("Solo quiero que repitas la solicitud, esa será la respuesta");
+                const url = `https://text.pollinations.ai/${encodedText}?model=openai-audio&system=${encodedSystemPrompt}&voice=${voice}`;
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                // Set the src of the embedded audio player and play
+                pollinationsAudioPlayer.src = audioUrl;
+                pollinationsAudioPlayer.style.display = 'block'; // Make the player visible
+                pollinationsAudioPlayer.play();
+
+                pollinationsAudioPlayer.onended = () => {
+                    URL.revokeObjectURL(audioUrl); // Clean up the object URL after playback
+                    if (buttonElement) {
+                        buttonElement.disabled = false;
+                        // Restore original button text based on its ID
+                        if (buttonElement.id === 'play-custom-audio-button') {
+                            buttonElement.innerHTML = 'Generar Audio';
+                        } else if (buttonElement.id === 'summarize-audio-button') {
+                            buttonElement.innerHTML = '<i class="fas fa-file-audio"></i> Resumir y Escuchar';
+                        }
+                    }
+                };
+
+                pollinationsAudioPlayer.onerror = (e) => {
+                    console.error('Error playing audio:', e);
+                    displaySystemMessage('Error al reproducir el audio generado.');
+                    if (buttonElement) {
+                        buttonElement.disabled = false;
+                        if (buttonElement.id === 'play-custom-audio-button') {
+                            buttonElement.innerHTML = 'Generar Audio';
+                        } else if (buttonElement.id === 'summarize-audio-button') {
+                            buttonElement.innerHTML = '<i class="fas fa-file-audio"></i> Resumir y Escuchar';
+                        }
+                    }
+                };
+
+            } catch (error) {
+                console.error('Error generating audio with Pollinations.ai:', error);
+                displaySystemMessage(`Error al generar audio: ${error.message}`);
+                if (buttonElement) {
+                    buttonElement.disabled = false;
+                    if (buttonElement.id === 'play-custom-audio-button') {
+                        buttonElement.innerHTML = 'Generar Audio';
+                    } else if (buttonElement.id === 'summarize-audio-button') {
+                        buttonElement.innerHTML = '<i class="fas fa-file-audio"></i> Resumir y Escuchar';
+                    }
+                }
+            }
+        };
+
+        // Function to display a message in the chat (for system messages)
+        function displaySystemMessage(messageText) {
+            const systemMessageDiv = document.createElement('div');
+            systemMessageDiv.className = 'gemini-message'; // Use gemini-message style for system messages
+            systemMessageDiv.textContent = messageText;
+            chatContainer.appendChild(systemMessageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        // Function to update the input placeholder based on active modes
+        function updateInputPlaceholder() {
+            if (isReportModeActive) {
+                messageInput.placeholder = "Escribe las indicaciones de tu informe";
+            } else if (isAdvancedReportModeActive) { // New advanced report mode placeholder
+                messageInput.placeholder = "Escribe el tema para el informe avanzado y luego presiona 'Comenzar Plan de Informe'";
+            }
+            else if (isSchemaModeActive) {
+                messageInput.placeholder = "Escribe el tema para generar un esquema interactivo. La respuesta que debe generar es un código de esquema.";
+            } else {
+                // Default placeholder for all other modes, including HTML mode
+                messageInput.placeholder = "Escribe tu mensaje...";
+            }
+        };
+
+        // New function to send to Gemini specifically for HTML generation with retries
+        async function sendToGeminiForHtmlOnly(messageToSendToGemini, originalUserMessage, currentFileDataArray, retryCount = 0) {
+            let promptText = messageToSendToGemini;
+            if (retryCount > 0) {
+                promptText = HTML_RETRY_PROMPTS[retryCount - 1] || HTML_RETRY_PROMPTS[HTML_RETRY_PROMPTS.length - 1];
+            }
+
+            let payloadContents = JSON.parse(JSON.stringify(history)); // Deep copy
+
+            // Ensure the last message in payloadContents is the current user prompt + files
+            if (payloadContents.length > 0 && payloadContents[payloadContents.length - 1].role === 'user') {
+                payloadContents[payloadContents.length - 1].parts = [{ text: promptText }]; // Start with text
+                if (currentFileDataArray && currentFileDataArray.length > 0) {
+                    currentFileDataArray.forEach(file => {
+                        payloadContents[payloadContents.length - 1].parts.push({
+                            inlineData: {
+                                mimeType: file.mimeType,
+                                data: file.data
+                            }
+                        });
+                    });
+                }
+            } else {
+                // This case should ideally not happen if history is managed correctly
+                const userParts = [{ text: promptText }];
+                if (currentFileDataArray && currentFileDataArray.length > 0) {
+                    currentFileDataArray.forEach(file => {
+                        userParts.push({
+                            inlineData: {
+                                mimeType: file.mimeType,
+                                data: file.data
+                            }
+                        });
+                    });
+                }
+                payloadContents.push({ role: 'user', parts: userParts });
+            }
+
+
+            try {
+                const payload = {
+                    contents: payloadContents,
+                    generationConfig: {
+                        temperature: 1,
+                        topP: 0.95,
+                        topK: 40,
+                        maxOutputTokens: 8192,
+                    },
+                    tools: [{ googleSearch: {} }],
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API response not OK (Gemini HTML generation):', response.status, response.statusText, errorText);
+                    throw new Error(`API error (Gemini HTML generation): ${response.status} ${response.statusText} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.candidates && data.candidates.length > 0) {
+                    let geminiResponse = data.candidates[0].content.parts[0].text;
+                    console.log("Raw Gemini HTML Response:", geminiResponse);
+
+                    const htmlMatch = geminiResponse.includes('<!DOCTYPE html>');
+
+                    if (htmlMatch) {
+                        htmlPreviewTextarea.value = geminiResponse;
+                        const iframeDoc = htmlPreviewIframe.contentWindow.document;
+                        iframeDoc.open();
+                        iframeDoc.write(geminiResponse);
+                        iframeDoc.close();
+                        showTab('tab-content-html-preview');
+                        geminiResponse = `Aquí está el código HTML generado:\n\n\`\`\`html\n${geminiResponse}\n\`\`\``;
+
+                        let responseHtml = showdownConverter.makeHtml(geminiResponse);
+                        // Apply KaTeX and code highlighting as before
+                        responseHtml = responseHtml.replace(/(-b ± √(b² - 4ac)) \/ 2a/g, '<span class="katex">\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}</span>');
+                        responseHtml = responseHtml.replace(/x\^2/g, '<span class="katex">x^2</span>');
+                        responseHtml = responseHtml.replace(/a\/b/g, '<span class="katex">\\frac{a}{b}</span>');
+                        responseHtml = responseHtml.replace(/\\sqrt\{(\w+)\}/g, '<span class="katex">\\sqrt{$1}</span>');
+                        responseHtml = responseHtml.replace(/\\sqrt\{(b\^2 - 4ac)\}/g, '<span class="katex">\\sqrt{b^2 - 4ac}</span>');
+                        responseHtml = responseHtml.replace(/(\\frac\{\w+\}\{\w+\})/g, '<span class="katex">$1</span>');
+                        responseHtml = responseHtml.replace(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g, (match, code) => {
+                            const highlightedCode = highlightCode(code.trim());
+                            return `<pre><code class="code-block">${highlightedCode}</code></pre>`;
+                        });
+
+                        history.push({ role: 'model', parts: [{ text: geminiResponse }] }); // Store model's textual response
+
+                        const geminiMessageDiv = document.createElement('div');
+                        geminiMessageDiv.className = 'gemini-message';
+                        geminiMessageDiv.innerHTML = responseHtml;
+                        chatContainer.appendChild(geminiMessageDiv);
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                        renderMath();
+
+                        // Clear file data on successful generation
+                        fileDataArray = [];
+                        fileInput.value = '';
+                        renderAllUploadedLists(); // Update file list display
+                    } else {
+                        if (retryCount < MAX_RETRIES) {
+                            history.push({ role: 'model', parts: [{ text: `Respuesta de Gemini (no HTML completo): ${geminiResponse.substring(0, 200)}...` }] });
+                            await sendToGeminiForHtmlOnly(originalUserMessage, originalUserMessage, currentFileDataArray, retryCount + 1);
+                        } else {
+                            let responseHtml = showdownConverter.makeHtml(geminiResponse);
+                            // Apply KaTeX and code highlighting as before
+                            responseHtml = responseHtml.replace(/(-b ± √(b² - 4ac)) \/ 2a/g, '<span class="katex">\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}</span>');
+                            responseHtml = responseHtml.replace(/x\^2/g, '<span class="katex">x^2</span>');
+                            responseHtml = responseHtml.replace(/a\/b/g, '<span class="katex">\\frac{a}{b}</span>');
+                            responseHtml = responseHtml.replace(/\\sqrt\{(\w+)\}/g, '<span class="katex">\\sqrt{$1}</span>');
+                            responseHtml = responseHtml.replace(/\\sqrt\{(b\^2 - 4ac)\}/g, '<span class="katex">\\sqrt{b^2 - 4ac}</span>');
+                            responseHtml = responseHtml.replace(/(\\frac\{\w+\}\{\w+\})/g, '<span class="katex">$1</span>');
+                            responseHtml = responseHtml.replace(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g, (match, code) => {
+                                const highlightedCode = highlightCode(code.trim());
+                                return `<pre><code class="code-block">${highlightedCode}</code></pre>`;
+                            });
+
+                            history.push({ role: 'model', parts: [{ text: geminiResponse }] });
+
+                            const geminiMessageDiv = document.createElement('div');
+                            geminiMessageDiv.className = 'gemini-message';
+                            geminiMessageDiv.innerHTML = responseHtml;
+                            chatContainer.appendChild(geminiMessageDiv);
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                            renderMath();
+                            // Do not clear inputs on failure - text is already restored by the event listener.
+                        }
+                    }
+
+                    if (data.candidates[0].groundingMetadata) {
+                        const groundingMetadata = data.candidates[0].groundingMetadata;
+                        if (groundingMetadata.searchEntryPoint && groundingMetadata.searchEntryPoint.renderedContent) {
+                            googleSearchSuggestionsContainer.innerHTML = groundingMetadata.searchEntryPoint.renderedContent;
+                        }
+                        if (groundingMetadata.groundingChunks && groundingMetadata.groundingChunks.length > 0) {
+                            webSearchSourcesList.innerHTML = ''; // Clear previous sources
+                            groundingMetadata.groundingChunks.forEach(chunk => {
+                                if (chunk.web && chunk.web.uri && chunk.web.title) {
+                                    const listItem = document.createElement('li');
+                                    const link = document.createElement('a');
+                                    link.href = chunk.web.uri;
+                                    link.textContent = chunk.web.title;
+                                    link.target = '_blank';
+                                    listItem.appendChild(link);
+                                    webSearchSourcesList.appendChild(listItem);
+                                }
+                            });
+                        }
+                        if (googleSearchSuggestionsContainer.innerHTML || webSearchSourcesList.innerHTML) {
+                            archivoMenu.classList.add('active');
+                            showTab('tab-content-web-searches');
+                        }
+                    }
+
+                } else {
+                    displaySystemMessage('Error: Gemini no pudo obtener una respuesta para la generación de HTML.');
+                    // Do not clear inputs on failure - text is already restored by the event listener.
+                }
+            } catch (error) {
+                console.error('Error al enviar mensaje a Gemini para HTML:', error);
+                displaySystemMessage('Error: nuestro servidor fallo.');
+                messageInput.value = originalUserMessage; // Restore message text on error
+            }
+        };
+
+        // This will store all collected search results and their sources during the deep report process.
+        let allSearchResults = [];
+        let allSearchSources = new Set(); // Using a Set to store unique source URLs
+
+        // Function to generate the advanced report plan
+        async function generateAdvancedReportPlan(topic) {
+            displaySystemMessage('Generando plan de investigación para un informe avanzado...');
+            console.log('Generando plan de investigación para un informe avanzado sobre:', topic);
+
+            const planPrompt = `Genera un plan de 5 partes para un informe detallado sobre "${topic}". El plan debe estructurarse así, y solo debes dar la lista numerada:
+            1. Buscar información general.
+            2. Profundizar en subtemas clave (especifica 2-3 subtemas).
+            3. Generar dudas de investigación (dudas que podrían surgir o que necesitan más datos).
+            4. Realizar búsquedas adicionales para resolver dudas.
+            5. Redactar el informe completo con webgrafía.`;
+
+            const planPayload = {
+                contents: [{ role: 'user', parts: [{ text: planPrompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 500,
+                },
+            };
+            try {
+                const planResponse = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(planPayload) });
+                const planData = await planResponse.json();
+
+                // Initialize reportPlan with objects including selected and completed status
+                reportPlan = planData.candidates[0].content.parts[0].text.trim().split('\n').filter(line => line.trim() !== '').map(step => {
+                    return { text: step.replace(/^\d+\.\s*/, '').trim(), selected: true, completed: false };
+                });
+
+                // New logic to omit the introductory sentence
+                if (reportPlan.length > 0 && reportPlan[0].text.includes('Aquí está el plan de 5 partes')) {
+                    reportPlan.shift(); // Remove the first element
+                }
+
+                console.log('Plan de investigación generado:');
+                reportPlan.forEach(step => console.log(step.text));
+                displaySystemMessage('Plan de informe generado. Presiona "Comenzar Plan de Informe" para iniciar la ejecución.');
+                displayReportPlan(); // Show plan in the UI
+                startReportPlanButton.disabled = false; // Enable start button
+                resetReportPlanButton.disabled = false; // Enable reset button
+            } catch (error) {
+                console.error('Error al generar el plan de informe:', error);
+                displaySystemMessage('Error al generar el plan de informe. Inténtalo de nuevo.');
+                resetReportPlan(); // Reset if plan generation fails
+            }
+        };
+
+        // Function to display the report plan in the UI
+        function displayReportPlan() {
+            reportPlanList.innerHTML = '';
+            reportPlan.forEach((stepObj, index) => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('report-plan-item'); // Add a class for styling/selection
+                listItem.draggable = true; // Make items draggable
+                listItem.dataset.index = index; // Store original index
+
+                listItem.innerHTML = `
+                    <input type="checkbox" id="step-checkbox-${index}" data-index="${index}" ${stepObj.selected ? 'checked' : ''} ${stepObj.completed ? 'disabled' : ''}>
+                    <span contenteditable="true" data-index="${index}" class="report-step-text">${stepObj.text}</span>
+                `;
+                if (stepObj.completed) {
+                    listItem.classList.add('completed');
+                }
+                reportPlanList.appendChild(listItem);
+            });
+            updateProgressBar();
+
+            // Add event listeners for checkboxes and contenteditable spans
+            reportPlanList.querySelectorAll('.report-plan-item input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', (event) => {
+                    const index = parseInt(event.target.dataset.index);
+                    reportPlan[index].selected = event.target.checked;
+                    updateProgressBar(); // Update progress based on selected steps
+                });
+            });
+
+            reportPlanList.querySelectorAll('.report-plan-item .report-step-text').forEach(span => {
+                span.addEventListener('input', (event) => {
+                    const index = parseInt(event.target.dataset.index);
+                    reportPlan[index].text = event.target.textContent;
+                });
+            });
+
+            // Add drag and drop event listeners
+            reportPlanList.querySelectorAll('.report-plan-item').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('dragleave', handleDragLeave); // New listener for visual feedback
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        };
+
+        // Drag and Drop Handlers
+        function handleDragStart(e) {
+            draggedItem = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            // Use setTimeout to ensure the class is applied after the browser captures the element for dragging
+            setTimeout(() => {
+                draggedItem.classList.add('dragging');
+            }, 0);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessary to allow a drop
+            e.dataTransfer.dropEffect = 'move';
+            // Add visual feedback for where the item will be dropped
+            const targetItem = e.target.closest('.report-plan-item');
+            if (targetItem && targetItem !== draggedItem) {
+                const rect = targetItem.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
+                if (offsetY < rect.height / 2) {
+                    targetItem.style.borderTop = '2px solid #007bff';
+                    targetItem.style.borderBottom = 'none';
+                } else {
+                    targetItem.style.borderBottom = '2px solid #007bff';
+                    targetItem.style.borderTop = 'none';
+                }
+            }
+        }
+
+        function handleDragLeave(e) {
+            const targetItem = e.target.closest('.report-plan-item');
+            if (targetItem) {
+                targetItem.style.borderTop = 'none';
+                targetItem.style.borderBottom = 'none';
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetItem = e.target.closest('.report-plan-item');
+            if (targetItem && draggedItem && targetItem !== draggedItem) {
+                const draggedIndex = Array.from(reportPlanList.children).indexOf(draggedItem);
+                const targetIndex = Array.from(reportPlanList.children).indexOf(targetItem);
+
+                const draggedData = reportPlan[draggedIndex];
+
+                // Remove the dragged item from its original position
+                reportPlan.splice(draggedIndex, 1);
+
+                // Determine new index based on drop position
+                const rect = targetItem.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
+                let newIndex = targetIndex;
+                if (offsetY > rect.height / 2) {
+                    newIndex = targetIndex + 1;
+                }
+
+                // Insert the dragged item into its new position
+                reportPlan.splice(newIndex, 0, draggedData);
+
+                // Re-render the plan to reflect the new order and update data-index
+                displayReportPlan();
+            }
+
+            // Clean up drop target styles
+            if (targetItem) {
+                targetItem.style.borderTop = 'none';
+                targetItem.style.borderBottom = 'none';
+            }
+        }
+
+        function handleDragEnd(e) {
+            // Remove dragging class from the dragged item
+            draggedItem.classList.remove('dragging');
+            draggedItem = null; // Clear dragged item reference
+            // Ensure all items have their border styles removed
+            reportPlanList.querySelectorAll('.report-plan-item').forEach(item => {
+                item.style.borderTop = 'none';
+                item.style.borderBottom = 'none';
+            });
+        }
+
+
+        // Function to update the progress bar
+        function updateProgressBar() {
+            const totalSelectedSteps = reportPlan.filter(step => step.selected).length;
+            const completedSelectedSteps = reportPlan.filter(step => step.selected && step.completed).length;
+            const progressPercentage = totalSelectedSteps === 0 ? 0 : (completedSelectedSteps / totalSelectedSteps) * 100;
+
+            reportProgressBar.style.width = `${progressPercentage}%`;
+            reportProgressBar.textContent = `${Math.round(progressPercentage)}%`;
+
+            if (progressPercentage === 100 && totalSelectedSteps > 0) {
+                displaySystemMessage('¡Informe avanzado completado!');
+                isExecutingReportPlan = false;
+                startReportPlanButton.disabled = true;
+                resetReportPlanButton.disabled = false;
+            } else if (isExecutingReportPlan && totalSelectedSteps > 0 && completedSelectedSteps === totalSelectedSteps) {
+                // All selected steps are now completed, but progress might not be 100% if total steps are fewer
+                displaySystemMessage('Todos los pasos seleccionados han sido completados.');
+                isExecutingReportPlan = false;
+                startReportPlanButton.disabled = true;
+                resetReportPlanButton.disabled = false;
+            }
+        };
+
+        // Function to reset the advanced report mode
+        function resetReportPlan() {
+            reportPlan = [];
+            currentReportStepIndex = 0;
+            reportTopic = '';
+            isExecutingReportPlan = false;
+            waitingForDoubtResponse = false;
+            allSearchResults = [];
+            allSearchSources = new Set();
+            reportPlanList.innerHTML = '';
+            reportProgressBar.style.width = '0%';
+            reportProgressBar.textContent = '0%';
+            startReportPlanButton.disabled = true;
+            resetReportPlanButton.disabled = true;
+            // Also clear new step input
+            newStepInput.value = '';
+            displaySystemMessage('Modo Informe Avanzado reiniciado. Introduce un nuevo tema para comenzar.');
+            updateInputPlaceholder();
+        };
+
+        // Core function to execute steps of the advanced report plan
+        async function executeReportPlanStep() {
+            // Find the next *selected* and *uncompleted* step
+            let nextStepObj = null;
+            let nextStepIndex = -1;
+            // Iterate from the current index to find the next step to execute
+            for (let i = currentReportStepIndex; i < reportPlan.length; i++) {
+                if (reportPlan[i].selected && !reportPlan[i].completed) {
+                    nextStepObj = reportPlan[i];
+                    nextStepIndex = i;
+                    break;
+                }
+            }
+
+            if (nextStepObj === null) { // No more selected or uncompleted steps
+                updateProgressBar();
+                isExecutingReportPlan = false;
+                startReportPlanButton.disabled = true;
+                resetReportPlanButton.disabled = false;
+                return;
+            }
+
+            currentReportStepIndex = nextStepIndex; // Set current index to the one being executed
+            const currentStepText = nextStepObj.text;
+
+            displaySystemMessage(`Ejecutando paso ${currentReportStepIndex + 1}: ${currentStepText}...`);
+            console.log(`Ejecutando paso ${currentReportStepIndex + 1}: ${currentStepText}`);
+
+            // Mark current step as completed in UI (checkbox and list item class)
+            const checkbox = document.getElementById(`step-checkbox-${currentReportStepIndex}`);
+            const listItem = checkbox ? checkbox.parentElement : null;
+            if (checkbox) {
+                checkbox.checked = true;
+                checkbox.disabled = true;
+                if (listItem) {
+                    listItem.classList.add('completed');
+                }
+            }
+            reportPlan[currentReportStepIndex].completed = true; // Mark as completed in data
+            updateProgressBar();
+
+            // Logic for each step based on its text
+            if (currentStepText.includes('Buscar información')) {
+                const searchPrompt = currentStepText.replace(/Buscar información(?: general)?/i, `Información sobre ${reportTopic}`);
+                await performGoogleSearch([searchPrompt]);
+                await executeReportPlanStep(); // Proceed to next step automatically
+            } else if (currentStepText.includes('Profundizar en subtemas clave')) {
+                const subtopicPrompt = `Dado el tema principal "${reportTopic}" y los siguientes resultados iniciales, ¿cuáles son 2-3 subtemas clave para profundizar en un informe? Sólo lista los subtemas separados por comas. Resultados: ${allSearchResults.map(r => r.snippet).join(' ').substring(0, 1000)}`;
+                try {
+                    const subtopicPayload = {
+                        contents: [{ role: 'user', parts: [{ text: subtopicPrompt }] }],
+                        generationConfig: { temperature: 0.5, maxOutputTokens: 200 },
+                    };
+                    const subtopicResponse = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subtopicPayload) });
+                    const subtopicData = await subtopicResponse.json();
+                    const subtopics = subtopicData.candidates[0].content.parts[0].text.trim().split(',').map(s => s.trim());
+
+                    if (subtopics.length > 0) {
+                        displaySystemMessage(`Profundizando en los subtemas: ${subtopics.join(', ')}. Realizando búsquedas.`);
+                        const subtopicQueries = subtopics.map(st => `${st} sobre ${reportTopic}`);
+                        await performGoogleSearch(subtopicQueries);
+                    } else {
+                        displaySystemMessage('No se pudieron identificar subtemas para profundizar. Continuando sin búsquedas adicionales por subtemas.');
+                    }
+                } catch (error) {
+                    console.error('Error al profundizar en subtemas:', error);
+                    displaySystemMessage('Error al profundizar en subtemas. Continuando.');
+                }
+                await executeReportPlanStep(); // Proceed to next step automatically
+
+            } else if (currentStepText.includes('Generar dudas de investigación')) {
+                waitingForDoubtResponse = true; // Set flag to wait for user input
+                displaySystemMessage('Generando posibles dudas de investigación...');
+                const collectedTextForDoubts = allSearchResults.map(result => result.snippet || '').join(' ');
+                const doubtsPrompt = `Dado el tema "${reportTopic}" y la información recopilada hasta ahora: "${collectedTextForDoubts.substring(0, 1500)}", genera 3-5 preguntas de investigación (dudas) que serían cruciales para un informe profundo. Formato: "- Pregunta". No incluyas explicaciones.`;
+
+                try {
+                    const doubtsPayload = {
+                        contents: [{ role: 'user', parts: [{ text: doubtsPrompt }] }],
+                        generationConfig: { temperature: 0.7, maxOutputTokens: 300 },
+                    };
+                    const doubtsResponse = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(doubtsPayload) });
+                    const doubtsData = await doubtsResponse.json();
+                    const generatedDoubts = doubtsData.candidates[0].content.parts[0].text.trim().split('\n').filter(line => line.trim() !== '');
+
+                    let doubtsHtml = "Aquí tienes algunas dudas que la IA ha generado para profundizar en la investigación:\n\n";
+                    generatedDoubts.forEach(d => doubtsHtml += `${d}\n`);
+                    displaySystemMessage(doubtsHtml);
+                    console.log('Dudas generadas:', generatedDoubts);
+
+                    await executeReportPlanStep(); // Automatically proceed to the next step
+
+                } catch (error) {
+                    console.error('Error al generar dudas:', error);
+                    displaySystemMessage('Error al generar dudas. Continuando con el siguiente paso.');
+                    waitingForDoubtResponse = false; // Reset flag on error
+                    await executeReportPlanStep(); // Proceed to next step automatically
+                }
+
+            } else if (currentStepText.includes('Realizar búsquedas adicionales para resolver dudas')) {
+                const doubtQueries = Array.from(allSearchSources).map(url => `detalles de ${url}`); // Using sources as base for additional searches
+                if (doubtQueries.length > 0) {
+                    displaySystemMessage('Realizando búsquedas adicionales para resolver dudas...');
+                    await performGoogleSearch(doubtQueries.slice(0, 3)); // Limit to a few searches
+                } else {
+                    displaySystemMessage('No hay dudas o fuentes para búsquedas adicionales. Saltando este paso.');
+                }
+                await executeReportPlanStep(); // Proceed to next step automatically
+
+            } else if (currentStepText.includes('Redactar el informe completo con webgrafía')) {
+                displaySystemMessage('Redactando el informe detallado...');
+                const fullCollectedText = allSearchResults.map(result => result.snippet || '').join('\n\n');
+                const sourcesFormatted = Array.from(allSearchSources).map(url => `- ${url}`).join('\n');
+
+                const finalReportPrompt = `Basándote en toda la información recopilada, redacta un informe profundo y detallado sobre "${reportTopic}". Organiza la información de manera lógica con subtítulos claros. Incluye un análisis crítico si es posible. Al final, proporciona una webgrafía completa con todos los enlaces visitados.
+                \nInformación recopilada (snippets): \n${fullCollectedText.substring(0, 8000)}` // Limit to prevent hitting token limits
+                    + `\n\nWebgrafía completa:\n${sourcesFormatted}`;
+
+                try {
+                    const finalReportPayload = {
+                        contents: [{ role: 'user', parts: [{ text: finalReportPrompt }] }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topP: 0.95,
+                            topK: 40,
+                            maxOutputTokens: 8192,
+                        },
+                        tools: [{ googleSearch: {} }],
+                    };
+
+                    const finalReportResponse = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(finalReportPayload) });
+                    const finalReportData = await finalReportResponse.json();
+                    let finalReportText = finalReportData.candidates[0].content.parts[0].text;
+
+                    console.log('Informe Final Generado:', finalReportText);
+                    displaySystemMessage('Informe completo generado y añadido al chat.');
+
+                    // Display final report in chat
+                    let responseHtml = showdownConverter.makeHtml(finalReportText);
+                    responseHtml = responseHtml.replace(/(-b ± √(b² - 4ac)) \/ 2a/g, '<span class="katex">\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}</span>');
+                    responseHtml = responseHtml.replace(/x\^2/g, '<span class="katex">x^2</span>');
+                    responseHtml = responseHtml.replace(/a\/b/g, '<span class="katex">\\frac{a}{b}</span>');
+                    responseHtml = responseHtml.replace(/\\sqrt\{(\w+)\}/g, '<span class="katex">\\sqrt{$1}</span>');
+                    responseHtml = responseHtml.replace(/\\sqrt\{(b\^2 - 4ac)\}/g, '<span class="katex">\\sqrt{b^2 - 4ac}</span>');
+                    responseHtml = responseHtml.replace(/(\\frac\{\w+\}\{\w+\})/g, '<span class="katex">$1</span>');
+                    responseHtml = responseHtml.replace(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g, (match, code) => {
+                        const highlightedCode = highlightCode(code.trim());
+                        return `<pre><code class="code-block">${highlightedCode}</code></pre>`;
+                    });
+
+                    const geminiMessageDiv = document.createElement('div');
+                    geminiMessageDiv.className = 'gemini-message';
+                    geminiMessageDiv.innerHTML = responseHtml;
+                    chatContainer.appendChild(geminiMessageDiv);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    renderMath();
+
+                    history.push({ role: 'model', parts: [{ text: finalReportText }] });
+
+                } catch (error) {
+                    console.error('Error al redactar el informe:', error);
+                    displaySystemMessage('Error al redactar el informe. Por favor, revisa la consola para más detalles.');
+                }
+                // Once the report is generated, the plan is completed
+                updateProgressBar(); // Should be 100% now
+                isExecutingReportPlan = false; // Plan is finished
+                startReportPlanButton.disabled = true; // Disable start button once finished
+                resetReportPlanButton.disabled = false; // Enable reset button
+            } else {
+                // For custom steps or unknown steps, just advance
+                console.warn(`Paso desconocido o personalizado: "${currentStepText}". Avanzando.`);
+                await executeReportPlanStep(); // Proceed to next step automatically
+            }
+        };
+
+        // Event listener for adding a new step
+        addStepButton.addEventListener('click', () => {
+            const newStepText = newStepInput.value.trim();
+            if (newStepText) {
+                reportPlan.push({ text: newStepText, selected: true, completed: false });
+                displayReportPlan(); // Re-render the plan
+                newStepInput.value = ''; // Clear input
+                startReportPlanButton.disabled = false; // Enable start button if there are steps
+            } else {
+                displaySystemMessage('Por favor, introduce texto para el nuevo paso.');
+            }
+        });
+
+
+        // Modify the original sendMessage to branch based on active modes
+        async function sendMessage(message, currentFileDataArray) { // Renamed fileDataArray to currentFileDataArray for clarity
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'user-message';
+            let messageHtml = showdownConverter.makeHtml(message);
+            userMessageDiv.innerHTML = messageHtml;
+
+            chatContainer.appendChild(userMessageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Add user message (text only) to history for model context.
+            // The actual payload will include files separately.
+            history.push({ role: 'user', parts: [{ text: message }] });
+
+            try {
+                if (isAdvancedReportModeActive && !isExecutingReportPlan) {
+                    reportTopic = message; // First message is the topic
+                    displaySystemMessage(`Modo Informe Avanzado activado. Tema: "${reportTopic}". Generando plan...`);
+                    await generateAdvancedReportPlan(reportTopic);
+                } else if (isAdvancedReportModeActive && isExecutingReportPlan && waitingForDoubtResponse) {
+                    // User is responding to doubts
+                    waitingForDoubtResponse = false; // Consume the response
+                    displaySystemMessage(`Recibida tu respuesta sobre las dudas. Continuando con el informe.`);
+                    // The user's message itself might be a search prompt or guidance.
+                    // For now, we just proceed with the plan. Future improvement: integrate user's doubt response into next searches.
+                    // currentReportStepIndex is already advanced by executeReportPlanStep that initiated the doubt request.
+                    // So we just re-call it to continue.
+                    await executeReportPlanStep();
+                }
+                else if (isSchemaModeActive) {
+                    await generarEsquemaInteractivoHTML(message);
+                } else if (isHtmlModeActive) {
+                    const fullHtmlPrompt = HTML_GENERATION_INSTRUCTION + message;
+                    await sendToGeminiForHtmlOnly(fullHtmlPrompt, message, currentFileDataArray);
+                } else {
+                    let payloadContents = JSON.parse(JSON.stringify(history)); // Deep copy
+                    let lastUserMessageIndex = -1;
+                    for (let i = payloadContents.length - 1; i >= 0; i--) {
+                        if (payloadContents[i].role === 'user') {
+                            lastUserMessageIndex = i;
+                            break;
+                        }
+                    };
+
+                    if (lastUserMessageIndex !== -1) {
+                        let currentMessageText = payloadContents[lastUserMessageIndex].parts[0].text;
+                        if (isReportModeActive) {
+                            const reportPrefix = "Genera un informe detallado y entendible sobre ";
+                            currentMessageText = reportPrefix + currentMessageText + ". Incluye la webgrafía de la mayor cantidad de sitios visitados.";
+                        }
+                        // Start with the (potentially modified) text part
+                        payloadContents[lastUserMessageIndex].parts = [{ text: currentMessageText }];
+
+                        // Add file data to the parts array of the last user message in the payload
+                        if (currentFileDataArray && currentFileDataArray.length > 0) {
+                            currentFileDataArray.forEach(file => {
+                                payloadContents[lastUserMessageIndex].parts.push({
+                                    inlineData: {
+                                        mimeType: file.mimeType,
+                                        data: file.data // Base64 data
+                                    }
+                                });
+                            });
+                        }
+                    }
+
+
+                    const payload = {
+                        contents: payloadContents,
+                        generationConfig: {
+                            temperature: 1,
+                            topP: 0.95,
+                            topK: 40,
+                            maxOutputTokens: 8192,
+                        },
+                        tools: [{ googleSearch: {} }],
+                    };
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('API response not OK (normal mode):', response.status, response.statusText, errorText);
+                        throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.candidates && data.candidates.length > 0) {
+                        let geminiResponse = data.candidates[0].content.parts[0].text;
+                        console.log("Raw Gemini Response (normal mode):", geminiResponse);
+
+                        if (data.candidates[0].groundingMetadata) {
+                            const groundingMetadata = data.candidates[0].groundingMetadata;
+                            if (groundingMetadata.searchEntryPoint && groundingMetadata.searchEntryPoint.renderedContent) {
+                                googleSearchSuggestionsContainer.innerHTML = groundingMetadata.searchEntryPoint.renderedContent;
+                            }
+                            if (groundingMetadata.groundingChunks && groundingMetadata.groundingChunks.length > 0) {
+                                webSearchSourcesList.innerHTML = ''; // Clear previous sources
+                                groundingMetadata.groundingChunks.forEach(chunk => {
+                                    if (chunk.web && chunk.web.uri && chunk.web.title) {
+                                        const listItem = document.createElement('li');
+                                        const link = document.createElement('a');
+                                        link.href = chunk.web.uri;
+                                        link.textContent = chunk.web.title;
+                                        link.target = '_blank';
+                                        listItem.appendChild(link);
+                                        webSearchSourcesList.appendChild(listItem);
+                                    }
+                                });
+                            }
+                            if (googleSearchSuggestionsContainer.innerHTML || webSearchSourcesList.innerHTML) {
+                                archivoMenu.classList.add('active');
+                                showTab('tab-content-web-searches');
+                            }
+                        }
+
+                        if (isReportModeActive) {
+                            const sourcesHtml = webSearchSourcesList.innerHTML;
+                            if (sourcesHtml) {
+                                geminiResponse += "\n\n**Webgrafía de sitios visitados:**\n";
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = sourcesHtml;
+                                Array.from(tempDiv.querySelectorAll('li a')).forEach(link => {
+                                    geminiResponse += `- [${link.textContent}](${link.href})\n`;
+                                });
+                            }
+                        }
+
+                        let responseHtml = showdownConverter.makeHtml(geminiResponse);
+                        // Apply KaTeX and code highlighting as before
+                        responseHtml = responseHtml.replace(/(-b ± √(b² - 4ac)) \/ 2a/g, '<span class="katex">\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}</span>');
+                        responseHtml = responseHtml.replace(/x\^2/g, '<span class="katex">x^2</span>');
+                        responseHtml = responseHtml.replace(/a\/b/g, '<span class="katex">\\frac{a}{b}</span>');
+                        responseHtml = responseHtml.replace(/\\sqrt\{(\w+)\}/g, '<span class="katex">\\sqrt{$1}</span>');
+                        responseHtml = responseHtml.replace(/\\sqrt\{(b\^2 - 4ac)\}/g, '<span class="katex">\\sqrt{b^2 - 4ac}</span>');
+                        responseHtml = responseHtml.replace(/(\\frac\{\w+\}\{\w+\})/g, '<span class="katex">$1</span>');
+                        responseHtml = responseHtml.replace(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g, (match, code) => {
+                            const highlightedCode = highlightCode(code.trim());
+                            return `<pre><code class="code-block">${highlightedCode}</code></pre>`;
+                        });
+
+                        history.push({ role: 'model', parts: [{ text: geminiResponse }] }); // Store model's textual response
+
+                        const geminiMessageDiv = document.createElement('div');
+                        geminiMessageDiv.className = 'gemini-message';
+                        geminiMessageDiv.innerHTML = responseHtml;
+                        chatContainer.appendChild(geminiMessageDiv);
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                        renderMath();
+
+                        // Clear file data on successful generation
+                        fileDataArray = [];
+                        fileInput.value = '';
+                        renderAllUploadedLists(); // Update file list display
+                    } else {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'gemini-message';
+                        errorDiv.textContent = 'Error: No se pudo obtener una respuesta del modelo.';
+                        chatContainer.appendChild(errorDiv);
+                        chatContainer.scrollTop = chatContainer.scrollTop;
+                        // Do not clear inputs on failure - text is already restored by the event listener.
+                    }
+                }
+            } catch (error) {
+                console.error('Error al enviar mensaje:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'gemini-message';
+                errorDiv.textContent = 'Error: nuestro servidor fallo.';
+                chatContainer.appendChild(errorDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                messageInput.value = message; // Restore message text on error
+            }
+        };
+
+        // Function to perform Google Search and update UI/data
+        async function performGoogleSearch(queries) {
+            webSearchSourcesList.innerHTML = ''; // Clear previous content related to search results in the UI
+            googleSearchSuggestionsContainer.innerHTML = '';
+
+            const searchPayload = {
+                contents: [{
+                    role: "user",
+                    parts: [{
+                        text: `Realiza las siguientes búsquedas en Google y proporciona los snippets y URLs:\n${queries.map(q => `- ${q}`).join('\n')}`
+                    }]
+                }],
+                tools: [{ googleSearch: {} }],
+            };
+
+            try {
+                const searchResponse = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(searchPayload)
+                });
+
+                if (!searchResponse.ok) {
+                    const errorText = await searchResponse.text();
+                    console.error('API response not OK (Google Search):', searchResponse.status, searchResponse.statusText, errorText);
+                    throw new Error(`API error (Google Search): ${searchResponse.status} ${searchResponse.statusText} - ${errorText}`);
+                }
+
+                const searchData = await searchResponse.json();
+
+                if (searchData.candidates && searchData.candidates.length > 0 && searchData.candidates[0].groundingMetadata) {
+                    const groundingMetadata = searchData.candidates[0].groundingMetadata;
+
+                    if (groundingMetadata.searchEntryPoint && groundingMetadata.searchEntryPoint.renderedContent) {
+                        googleSearchSuggestionsContainer.innerHTML = groundingMetadata.searchEntryPoint.renderedContent;
+                    }
+
+                    if (groundingMetadata.groundingChunks && groundingMetadata.groundingChunks.length > 0) {
+                        // Collect new snippets and add sources to the Set
+                        groundingMetadata.groundingChunks.forEach(chunk => {
+                            if (chunk.web) {
+                                allSearchResults.push({ snippet: chunk.web.snippet, url: chunk.web.uri });
+                                allSearchSources.add(chunk.web.uri); // Add URL to the set of unique sources
+                            }
+                        });
+
+                        // Update the displayed sources list
+                        webSearchSourcesList.innerHTML = '';
+                        Array.from(allSearchSources).forEach(url => {
+                            const listItem = document.createElement('li');
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.textContent = url; // Display URL directly
+                            link.target = '_blank';
+                            listItem.appendChild(link);
+                            webSearchSourcesList.appendChild(listItem);
+                        });
+                    }
+                    archivoMenu.classList.add('active'); // Open file menu
+                    showTab('tab-content-web-searches'); // Show web searches tab
+                } else {
+                    console.warn('No se encontraron resultados de búsqueda o metadatos de fundamentación.');
+                    displaySystemMessage('No se pudo realizar la búsqueda web o no se encontraron resultados relevantes.');
+                }
+            } catch (error) {
+                console.error('Error al realizar la búsqueda en Google:', error);
+                displaySystemMessage(`Error al realizar la búsqueda: ${error.message}`);
+            }
+        };
+
+        let fileDataArray = []; // Files attached for the current message
+        const uploadedFiles = []; // All files uploaded during the conversation
+
+        // Event listener for send button click
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+
+            if (message || fileDataArray.length > 0) {
+                // Pass a copy of fileDataArray so it's not cleared prematurely if sendMessage is async
+                sendMessage(message, [...fileDataArray]);
+                messageInput.value = ''; // Clear input immediately after sending
+            }
+        });
+
+        // Event listener for Enter key in message input
+        messageInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                sendButton.click();
+                event.preventDefault(); // Prevent new line in input
+            }
+        });
+
+        // Event listener for pasting content into the message input
+        messageInput.addEventListener('paste', async (event) => {
+            const items = event.clipboardData?.items;
+            if (!items) return;
+
+            event.preventDefault(); // Prevent default paste behavior
+
+            let pastedText = '';
+            // Iterate through clipboard items to find plain text
+            for (const item of items) {
+                if (item.type === 'text/plain') {
+                    pastedText = event.clipboardData.getData('text/plain');
+                    break; // Found plain text, no need to check other types for message input
+                }
+            }
+
+            // Append pasted plain text to current input value
+            if (pastedText) {
+                messageInput.value += pastedText;
+            }
+            // Images and HTML are ignored for direct pasting into messageInput
+            // They can still be handled by fileInput or binaryPasteTextarea if needed
+        });
+
+        // Event listener for the "Escuchar" (Listen) button
+        readButton.addEventListener('click', () => {
+            const messages = document.querySelectorAll('.user-message, .gemini-message');
+            let fullText = '';
+            messages.forEach(message => {
+                fullText += message.textContent + '. ';
+            });
+
+            // Use browser's SpeechSynthesisUtterance for the general "Escuchar" button
+            playBrowserAudioForText(fullText, previewAudioVoiceSelector.value, readButton);
+        });
+
+        // Event listener for the "Descargar PDF" (Download PDF) button
+        downloadPdfButton.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let yPos = 10;
+            const margin = 10;
+            const pageWidth = doc.internal.pageSize.width;
+            const pageHeight = doc.internal.pageSize.height;
+            const maxWidth = pageWidth - 2 * margin; // Max width for text in PDF
+
+            // Function to add text with word wrapping and handle new pages
+            function addWrappedText(text, x, y, maxWidth, doc, isBold = false) {
+                doc.setFont("helvetica", isBold ? "bold" : "normal");
+                const textLines = doc.splitTextToSize(text, maxWidth);
+                let currentY = y;
+
+                for (const line of textLines) {
+                    // Check if new page is needed before adding the line
+                    if (currentY + doc.getTextDimensions(line).h > pageHeight - margin) {
+                        doc.addPage();
+                        currentY = margin; // Reset Y position for new page
+                    }
+                    doc.text(line, x, currentY);
+                    currentY += doc.getTextDimensions(line).h + 2; // Add line height + small padding
+                }
+                return currentY - y; // Return total height used for this block
+            }
+
+            const messages = document.querySelectorAll('.user-message, .gemini-message');
+            messages.forEach(message => {
+                let messageText = message.textContent; // Get text content, not innerHTML
+                const isUserMessage = message.classList.contains('user-message');
+
+                // Add message text to PDF
+                const textHeight = addWrappedText(messageText, margin, yPos, maxWidth, doc, isUserMessage);
+                yPos += textHeight + 5; // Add some padding between messages
+            });
+
+            doc.save('chat_conversation.pdf');
+        });
+
+        // Function to update the font size of the chat messages
+        fontSizeSelector.addEventListener('change', (event) => {
+            const selectedFontSize = event.target.value + 'px';
+            chatContainer.style.fontSize = selectedFontSize;
+        });
+
+        // Function to render all uploaded files in both lists (Archivos and Documentos tabs)
+        function renderAllUploadedLists() {
+            archivosLista.innerHTML = '';
+            documentsLista.innerHTML = '';
+
+            uploadedFiles.forEach((file, index) => {
+                const listItemHtml = `
+                        <span>${file.name}</span>
+                        <div class="archivo-iconos">
+                            <a href="#" data-index="${index}" class="reattach-file" title="Volver a adjuntar">&#x21BA;</a>
+                            <a href="#" data-index="${index}" class="delete-file" title="Eliminar">&#x1F5D1;</a>
+                        </div>
+                    `;
+
+                // Add to "Archivos" tab list
+                const fileTabListItem = document.createElement('li');
+                fileTabListItem.innerHTML = listItemHtml;
+                archivosLista.appendChild(fileTabListItem);
+
+                // Add to "Documentos" tab list
+                const docTabListItem = document.createElement('li');
+                docTabListItem.innerHTML = listItemHtml;
+                documentsLista.appendChild(docTabListItem);
+            });
+        };
+
+        // Event listener to toggle the file menu visibility
+        archivosButton.addEventListener('click', () => {
+            archivoMenu.classList.toggle('active');
+            if (archivoMenu.classList.contains('active')) {
+                showTab('tab-content-files'); // Default to 'Archivos' tab when opening
+            }
+        });
+
+        // Event listener to close the file menu
+        closeMenuButton.addEventListener('click', () => {
+            archivoMenu.classList.remove('active');
+        });
+
+        // Event listener for file input change (from main chat interface)
+        fileInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            if (files.length > 0) {
+                processFiles(files);
+            }
+        });
+
+        // Event listener for clicking the "Arrastra y suelta" area to open file input
+        archivoSubir.addEventListener('click', (event) => {
+            archivoSubirInput.click();
+        });
+
+        // Event listener for file input change (from file menu)
+        archivoSubirInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            if (files.length > 0) {
+                processFiles(files);
+            }
+        });
+
+        // Function to process selected or dropped files
+        function processFiles(files) {
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const newFile = {
+                        name: file.name,
+                        mimeType: file.type,
+                        data: e.target.result.split(',')[1], // Base64 encoded data
+                        url: e.target.result // Full data URL for local display (e.g., thumbnails)
+                    };
+                    // Check if file already exists to avoid duplicates in fileDataArray for the current message
+                    const existingFileInCurrentMessage = fileDataArray.find(f => f.name === newFile.name && f.mimeType === newFile.mimeType && f.data === newFile.data);
+                    if (!existingFileInCurrentMessage) {
+                        fileDataArray.push(newFile); // Add to current message's files
+                    }
+
+                    // Add to overall uploadedFiles list if not already there (based on name and type for simplicity)
+                    const existingFileInUploaded = uploadedFiles.find(f => f.name === newFile.name && f.mimeType === newFile.mimeType);
+                    if (!existingFileInUploaded) {
+                        uploadedFiles.push(newFile);
+                    }
+                    renderAllUploadedLists(); // Update displayed lists in the "MAS" menu
+                };
+                reader.readAsDataURL(file); // Read file as Data URL (Base64)
+            }
+        };
+
+        // Drag and drop event listeners for the file upload area
+        archivoSubir.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            archivoSubir.style.backgroundColor = '#e0e0e0';
+        });
+
+        archivoSubir.addEventListener('dragleave', (event) => {
+            archivoSubir.style.backgroundColor = 'transparent';
+        });
+
+        archivoSubir.addEventListener('drop', (event) => {
+            event.preventDefault();
+            archivoSubir.style.backgroundColor = 'transparent';
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                processFiles(files);
+            }
+        });
+
+        // Event listener for actions within the uploaded files list (reattach/delete)
+        archivosLista.addEventListener('click', (event) => {
+            if (event.target.classList.contains('reattach-file')) {
+                event.preventDefault();
+                const index = parseInt(event.target.dataset.index);
+                const fileToReattach = uploadedFiles[index];
+                if (fileToReattach) {
+                    // Add to current message's files if not already there
+                    const existingFileInCurrentMessage = fileDataArray.find(f => f.name === fileToReattach.name && f.mimeType === fileToReattach.mimeType && f.data === fileToReattach.data);
+                    if (!existingFileInCurrentMessage) {
+                        fileDataArray.push(fileToReattach);
+                    }
+                    console.log(`Archivo adjuntado de nuevo: ${fileToReattach.name}`);
+                    // displaySystemMessage(`Archivo "${fileToReattach.name}" listo para enviar con el próximo mensaje.`); // Line commented out
+                }
+            } else if (event.target.classList.contains('delete-file')) {
+                event.preventDefault();
+                const index = parseInt(event.target.dataset.index);
+                const fileToDelete = uploadedFiles[index];
+
+                if (fileToDelete) {
+                    // Remove from overall uploaded files
+                    uploadedFiles.splice(index, 1);
+                    // Also remove from current message's files if it's there
+                    let i = fileDataArray.length;
+                    while (i--) {
+                        if (fileDataArray[i].name === fileToDelete.name && fileDataArray[i].mimeType === fileToDelete.mimeType && fileDataArray[i].data === fileToDelete.data) {
+                            fileDataArray.splice(i, 1);
+                        }
+                    }
+                    renderAllUploadedLists(); // Re-render lists to reflect changes
+                    console.log(`Archivo eliminado: ${fileToDelete.name}`);
+                } else {
+                    console.error('Archivo no encontrado para eliminación en el índice:', index);
+                }
+            }
+        });
+
+        // Event listener for actions within the documents list (reattach/delete) - mirrors archivosLista
+        documentsLista.addEventListener('click', (event) => {
+            if (event.target.classList.contains('reattach-file')) {
+                event.preventDefault();
+                const index = parseInt(event.target.dataset.index);
+                const fileToReattach = uploadedFiles[index];
+                if (fileToReattach) {
+                    const existingFileInCurrentMessage = fileDataArray.find(f => f.name === fileToReattach.name && f.mimeType === fileToReattach.mimeType && f.data === fileToReattach.data);
+                    if (!existingFileInCurrentMessage) {
+                        fileDataArray.push(fileToReattach);
+                    }
+                    console.log(`Archivo adjuntado de nuevo desde documentos: ${fileToReattach.name}`);
+                    // displaySystemMessage(`Archivo "${fileToReattach.name}" listo para enviar con el próximo mensaje.`); // Line commented out
+                }
+            } else if (event.target.classList.contains('delete-file')) {
+                event.preventDefault();
+                const index = parseInt(event.target.dataset.index);
+                const fileToDelete = uploadedFiles[index];
+
+                if (fileToDelete) {
+                    uploadedFiles.splice(index, 1);
+                    let i = fileDataArray.length;
+                    while (i--) {
+                        if (fileDataArray[i].name === fileToDelete.name && fileDataArray[i].mimeType === fileToDelete.mimeType && fileDataArray[i].data === fileToDelete.data) {
+                            fileDataArray.splice(i, 1);
+                        }
+                    }
+                    renderAllUploadedLists();
+                    console.log(`Archivo eliminado desde documentos: ${fileToDelete.name}`);
+                } else {
+                    console.error('Archivo no encontrado para eliminación en el índice:', index);
+                }
+            }
+        });
+
+        // Function to handle tab switching in the file menu
+        function showTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active-tab-content');
+            });
+            // Deactivate all tab buttons
+            document.querySelectorAll('.tab-buttons button').forEach(button => {
+                button.classList.remove('active-tab');
+            });
+
+            // Show the selected tab content
+            document.getElementById(tabId).classList.add('active-tab-content');
+
+            // Activate the corresponding tab button
+            if (tabId === 'tab-content-files') {
+                tabButtonFiles.classList.add('active-tab');
+            } else if (tabId === 'tab-content-html-preview') {
+                tabButtonHtmlPreview.classList.add('active-tab');
+            } else if (tabId === 'tab-content-documents') {
+                tabButtonDocuments.classList.add('active-tab');
+            } else if (tabId === 'tab-content-web-searches') {
+                tabButtonWebSearches.classList.add('active-tab');
+            } else if (tabId === 'tab-content-audio-preview') {
+                tabButtonAudioPreview.classList.add('active-tab');
+            } else if (tabId === 'tab-content-advanced-report') {
+                tabButtonAdvancedReport.classList.add('active-tab');
+            }
+        };
+
+        // Event listeners for tab buttons
+        tabButtonFiles.addEventListener('click', () => showTab('tab-content-files'));
+        tabButtonHtmlPreview.addEventListener('click', () => showTab('tab-content-html-preview'));
+        tabButtonDocuments.addEventListener('click', () => showTab('tab-content-documents'));
+        tabButtonWebSearches.addEventListener('click', () => showTab('tab-content-web-searches'));
+        tabButtonAudioPreview.addEventListener('click', () => showTab('tab-content-audio-preview'));
+        tabButtonAdvancedReport.addEventListener('click', () => showTab('tab-content-advanced-report'));
+
+
+        // Event listener for binary paste textarea
+        binaryPasteTextarea.addEventListener('paste', (event) => {
+            const items = event.clipboardData?.items;
+            if (!items) return;
+
+            event.preventDefault(); // Prevent default paste behavior
+
+            let filesProcessed = false;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        const uniqueFileName = `pasted_image_${crypto.randomUUID()}.${file.type.split('/')[1] || 'png'}`;
+                        const uniqueFile = new File([file], uniqueFileName, { type: file.type });
+                        processFiles([uniqueFile]);
+                        filesProcessed = true;
+                    }
+                } else if (item.type === 'text/plain') {
+                    const pastedText = event.clipboardData.getData('text/plain');
+                    if (pastedText.startsWith('data:') || (pastedText.length > 500 && pastedText.match(/^[a-zA-Z0-9+/=]+$/))) {
+                        try {
+                            const mimeTypeMatch = pastedText.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/);
+                            if (mimeTypeMatch) {
+                                const mimeType = mimeTypeMatch[1];
+                                const base64Data = pastedText.split(',')[1];
+                                const uniqueFileName = `pasted_data_${crypto.randomUUID()}.${mimeType.split('/')[1] || 'bin'}`;
+                                const newFile = {
+                                    name: uniqueFileName,
+                                    mimeType: mimeType,
+                                    data: base64Data,
+                                    url: pastedText
+                                };
+                                fileDataArray.push(newFile);
+                                uploadedFiles.push(newFile);
+                                renderAllUploadedLists();
+                                filesProcessed = true;
+                            }
+                        } catch (e) {
+                            console.error("Error processing pasted base64 data:", e);
+                        }
+                    } else {
+                        const currentText = binaryPasteTextarea.value;
+                        binaryPasteTextarea.value = currentText + pastedText;
+                    }
+                }
+            }
+            if (filesProcessed) {
+                binaryPasteTextarea.value = '';
+                // displaySystemMessage('Archivos pegados listos para enviar con el próximo mensaje.'); // Line commented out
+            }
+        });
+
+        // Event listener for HTML preview textarea input
+        htmlPreviewTextarea.addEventListener('input', () => {
+            const htmlContent = htmlPreviewTextarea.value;
+            const iframeDoc = htmlPreviewIframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(htmlContent);
+            iframeDoc.close();
+        });
+
+        // Event listener for opening HTML in a new tab
+        openHtmlNewTabButton.addEventListener('click', () => {
+            const htmlContent = htmlPreviewTextarea.value;
+            if (htmlContent) {
+                const newWindow = window.open();
+                newWindow.document.write(htmlContent);
+                newWindow.document.close();
+            } else {
+                console.log('No HTML content to open.');
+            }
+        });
+
+        // Event listener for opening fullscreen HTML modal
+        htmlPreviewIframe.addEventListener('click', () => {
+            const htmlContent = htmlPreviewTextarea.value;
+            if (htmlContent) {
+                fullscreenHtmlIframe.srcdoc = htmlContent;
+                fullscreenHtmlModal.classList.add('active');
+            }
+        });
+
+        // Event listener for closing fullscreen HTML modal
+        closeFullscreenModalButton.addEventListener('click', () => {
+            fullscreenHtmlModal.classList.remove('active');
+            fullscreenHtmlIframe.srcdoc = ''; // Clear iframe content
+        });
+
+        // Event listener for "Generar Audio" button
+        playCustomAudioButton.addEventListener('click', async () => {
+            const textToPlay = customAudioTextarea.value.trim();
+            const selectedVoice = previewAudioVoiceSelector.value;
+            await generateAndPlayPollinationsAudio(textToPlay, selectedVoice, playCustomAudioButton);
+        });
+
+        // Event listener for "Resumir y Escuchar" button
+        summarizeAudioButton.addEventListener('click', async () => {
+            summarizeAudioButton.disabled = true;
+            summarizeAudioButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resumiendo...';
+            pollinationsAudioPlayer.style.display = 'none';
+
+            let fullConversationText = '';
+            const messages = document.querySelectorAll('.user-message, .gemini-message');
+            messages.forEach(messageDiv => {
+                const role = messageDiv.classList.contains('user-message') ? 'Usuario' : 'IA';
+                fullConversationText += `${role}: ${messageDiv.textContent}\n\n`;
+            });
+
+            if (!fullConversationText.trim()) {
+                // displaySystemMessage('No hay conversación para resumir.'); // Line commented out
+                summarizeAudioButton.disabled = false;
+                summarizeAudioButton.innerHTML = '<i class="fas fa-file-audio"></i> Resumir y Escuchar';
+                return;
+            }
+
+            const summarizePrompt = `Genera un resumen conciso y coherente de la siguiente conversación:\n\n${fullConversationText}`;
+            const summarizationModel = 'gpt-3.5-turbo';
+
+            try {
+                const encodedSummarizePrompt = encodeURIComponent(summarizePrompt);
+                const summarizeUrl = `https://text.pollinations.ai/${encodedSummarizePrompt}?model=${summarizationModel}`;
+
+                const response = await fetch(summarizeUrl);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error al resumir con Pollinations.ai: ${response.status} ${response.statusText} - ${errorText}`);
+                }
+
+                const summaryText = await response.text();
+                const selectedVoice = previewAudioVoiceSelector.value;
+                await generateAndPlayPollinationsAudio(summaryText, selectedVoice, summarizeAudioButton);
+
+            } catch (error) {
+                console.error('Error al resumir la conversación:', error);
+                displaySystemMessage(`Error al resumir la conversación: ${error.message}`);
+                summarizeAudioButton.disabled = false;
+                summarizeAudioButton.innerHTML = '<i class="fas fa-file-audio"></i> Resumir y Escuchar';
+            }
+        });
+
+
+        // Event listener for Report button
+        reportButton.addEventListener('click', () => {
+            isReportModeActive = !isReportModeActive;
+            reportButton.classList.toggle('report-active', isReportModeActive);
+
+            if (isReportModeActive) {
+                // Deactivate other modes
+                if (isAdvancedReportModeActive) {
+                    isAdvancedReportModeActive = false;
+                    deepReportButton.classList.remove('advanced-report-active');
+                    resetReportPlan();
+                }
+                if (isHtmlModeActive) {
+                    isHtmlModeActive = false;
+                    htmlModeButton.classList.remove('html-active');
+                }
+                if (isImage4ModeActive) {
+                    isImage4ModeActive = false;
+                    imageModeButton.classList.remove('image-active');
+                    showChatMode();
+                }
+                if (isSchemaModeActive) {
+                    isSchemaModeActive = false;
+                    schemaModeButton.classList.remove('schema-active');
+                }
+                console.log("Modo Informe activado.");
+            } else {
+                console.log("Modo Informe desactivado.");
+            }
+            updateInputPlaceholder();
+        });
+
+        // Event listener for Deep Report button (now Advanced Report)
+        deepReportButton.addEventListener('click', () => {
+            isAdvancedReportModeActive = !isAdvancedReportModeActive;
+            deepReportButton.classList.toggle('advanced-report-active', isAdvancedReportModeActive);
+
+            if (isAdvancedReportModeActive) {
+                // Deactivate other modes
+                if (isReportModeActive) {
+                    isReportModeActive = false;
+                    reportButton.classList.remove('report-active');
+                }
+                if (isHtmlModeActive) {
+                    isHtmlModeActive = false;
+                    htmlModeButton.classList.remove('html-active');
+                }
+                if (isImage4ModeActive) {
+                    isImage4ModeActive = false;
+                    imageModeButton.classList.remove('image-active');
+                    showChatMode();
+                }
+                if (isSchemaModeActive) {
+                    isSchemaModeActive = false;
+                    schemaModeButton.classList.remove('schema-active');
+                }
+                console.log("Modo Informe Avanzado activado.");
+                displaySystemMessage("Modo Informe Avanzado activado. Por favor, escribe el tema del informe en la barra de mensajes.");
+                archivoMenu.classList.add('active'); // Open file menu
+                showTab('tab-content-advanced-report'); // Show advanced report tab
+                resetReportPlan(); // Prepare for a new plan
+            } else {
+                console.log("Modo Informe Avanzado desactivado.");
+                displaySystemMessage("Modo Informe Avanzado desactivado.");
+                resetReportPlan();
+            }
+            updateInputPlaceholder();
+        });
+
+        // Event listener for Start Report Plan button
+        startReportPlanButton.addEventListener('click', async () => {
+            if (reportPlan.length > 0 && !isExecutingReportPlan) {
+                // Ensure at least one step is selected before starting
+                if (reportPlan.some(step => step.selected)) {
+                    isExecutingReportPlan = true;
+                    startReportPlanButton.disabled = true;
+                    resetReportPlanButton.disabled = true; // Disable reset during execution
+                    // Find the first uncompleted and selected step to start from
+                    currentReportStepIndex = reportPlan.findIndex(step => step.selected && !step.completed);
+                    if (currentReportStepIndex === -1) { // All selected steps already completed
+                        displaySystemMessage('Todos los pasos seleccionados ya están completados. Reinicia el plan o añade nuevos pasos.');
+                        isExecutingReportPlan = false;
+                        startReportPlanButton.disabled = true;
+                        resetReportPlanButton.disabled = false;
+                        return;
+                    }
+                    await executeReportPlanStep();
+                } else {
+                    displaySystemMessage('Selecciona al menos un paso en el plan para comenzar.');
+                }
+            } else if (isExecutingReportPlan) {
+                displaySystemMessage('El plan de informe ya está en ejecución.');
+            } else {
+                displaySystemMessage('Primero, activa el Modo Informe Avanzado e introduce un tema para generar el plan.');
+            }
+        });
+
+        // Event listener for Reset Report Plan button
+        resetReportPlanButton.addEventListener('click', () => {
+            resetReportPlan();
+        });
+
+
+        // Event listener for HTML Mode button (now for HTML filtering)
+        htmlModeButton.addEventListener('click', () => {
+            isHtmlModeActive = !isHtmlModeActive;
+            htmlModeButton.classList.toggle('html-active', isHtmlModeActive);
+
+            if (isHtmlModeActive) {
+                // Deactivate other modes
+                if (isReportModeActive) {
+                    isReportModeActive = false;
+                    reportButton.classList.remove('report-active');
+                }
+                if (isAdvancedReportModeActive) {
+                    isAdvancedReportModeActive = false;
+                    deepReportButton.classList.remove('advanced-report-active');
+                    resetReportPlan();
+                }
+                if (isImage4ModeActive) {
+                    isImage4ModeActive = false;
+                    imageModeButton.classList.remove('image-active');
+                    showChatMode();
+                }
+                if (isSchemaModeActive) {
+                    isSchemaModeActive = false;
+                    schemaModeButton.classList.remove('schema-active');
+                }
+                console.log("Modo HTML activado.");
+            } else {
+                console.log("Modo HTML desactivado.");
+            }
+            updateInputPlaceholder();
+        });
+
+        // Event listener for Image Mode button
+        imageModeButton.addEventListener('click', () => {
+            isImage4ModeActive = !isImage4ModeActive;
+            imageModeButton.classList.toggle('image-active', isImage4ModeActive);
+
+            if (isImage4ModeActive) {
+                // Deactivate other modes
+                if (isReportModeActive) {
+                    isReportModeActive = false;
+                    reportButton.classList.remove('report-active');
+                }
+                if (isAdvancedReportModeActive) {
+                    isAdvancedReportModeActive = false;
+                    deepReportButton.classList.remove('advanced-report-active');
+                    resetReportPlan();
+                }
+                if (isHtmlModeActive) {
+                    isHtmlModeActive = false;
+                    htmlModeButton.classList.remove('html-active');
+                    showChatMode();
+                }
+                if (isSchemaModeActive) {
+                    isSchemaModeActive = false;
+                    schemaModeButton.classList.remove('schema-active');
+                }
+                console.log("Modo Imagen 4 activado.");
+                showImage4Mode();
+            } else {
+                console.log("Modo Imagen 4 desactivado.");
+                showChatMode();
+            }
+            updateInputPlaceholder();
+        });
+
+        // Event listener for Schema Mode button
+        schemaModeButton.addEventListener('click', () => {
+            isSchemaModeActive = !isSchemaModeActive;
+            schemaModeButton.classList.toggle('schema-active', isSchemaModeActive);
+
+            if (isSchemaModeActive) {
+                // Deactivate other modes
+                if (isReportModeActive) {
+                    isReportModeActive = false;
+                    reportButton.classList.remove('report-active');
+                }
+                if (isAdvancedReportModeActive) {
+                    isAdvancedReportModeActive = false;
+                    deepReportButton.classList.remove('advanced-report-active');
+                    resetReportPlan();
+                }
+                if (isHtmlModeActive) {
+                    isHtmlModeActive = false;
+                    htmlModeButton.classList.remove('html-active');
+                }
+                if (isImage4ModeActive) {
+                    isImage4ModeActive = false;
+                    imageModeButton.classList.remove('image-active');
+                    showChatMode(); // Return to chat view if in image mode
+                }
+                console.log("Modo Esquema Interactivo activado.");
+                // Removed the specific diagram type list from the system message
+                displaySystemMessage("Modo Esquema Interactivo activado. Los próximos mensajes generarán esquemas interactivos.");
+            } else {
+                console.log("Modo Esquema Interactivo desactivado.");
+                displaySystemMessage("Modo Esquema Interactivo desactivado.");
+            }
+            updateInputPlaceholder();
+        });
+
+
+        // Function to show the chat interface and hide the image interface
+        function showChatMode() {
+            chatContainer.style.display = 'flex';
+            inputContainer.style.display = 'flex';
+            bottomButtonsContainer.style.display = 'flex';
+            image4Container.style.display = 'none';
+            imageModeButton.classList.remove('image-active');
+            isImage4ModeActive = false;
+        };
+
+        // Function to show the image interface and hide the chat interface
+        function showImage4Mode() {
+            chatContainer.style.display = 'none';
+            inputContainer.style.display = 'none';
+            bottomButtonsContainer.style.display = 'none';
+            image4Container.style.display = 'flex';
+            initializeImage4App();
+        };
+
+        // Image 4 Specific JavaScript
+        const imagenGenerada = document.getElementById("imagenGenerada");
+        const generarImagenBtn = document.getElementById("generarImagen");
+        const mensajeInputImg4 = document.getElementById("mensajeInput"); // Renamed to avoid conflict
+        const variarImagenBtn = document.getElementById("variarImagen");
+        const variacionAlgoritmicaBtn = document.getElementById("variacionAlgoritmica");
+        const pararVariacionBtn = document.getElementById("pararVariacion"); // Corrected assignment
+        const galeriaImagenes = document.getElementById("galeriaImagenes");
+        const verBibliotecaBtn = document.getElementById("verBiblioteca");
+        const ocultarBibliotecaBtn = document.getElementById("ocultarBiblioteca");
+        const descargarImagenBtn = document.getElementById("descargarImagenPrincipal");
+        const descargarGaleriaBtn = document.getElementById("descargarGaleria"); // Corrected this line
+        const descargarSeleccionadasBtn = document.getElementById("descargarSeleccionadas");
+        const modeloSelector = document.getElementById("modeloSelector");
+
+        let currentSeed = 0;
+        let generacionContinua;
+
+        function generarNumeroAleatorio() {
+            return Math.floor(Math.random() * 1000000);
+        };
+
+        function generarURLImagen(mensaje, seed, modelo = 'flux') {
+            const dimension = 512;
+            const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(mensaje)}?width=${dimension}&height=${dimension}&seed=${seed}&model=${modelo}&nologo=true`;
+            return url;
+        };
+
+        function convertirURLADataURL(url, callback) {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                const reader = new FileReader();
+                reader.onloadend = function () {
+                    callback(reader.result);
+                }
+                reader.readAsDataURL(xhr.response);
+            };
+            xhr.open('GET', url);
+            xhr.responseType = 'blob';
+            xhr.send();
+        };
+
+        function generarVariacionesAlgoritmicas(mensaje, modeloSeleccionado = 'flux') {
+            const galeria = document.getElementById("galeriaImagenes");
+            let seed = 1;
+            let generando = true;
+
+            function generarSiguienteImagen() {
+                if (!generando) return;
+
+                const nuevaImagenURL = generarURLImagen(mensaje, seed, modeloSeleccionado);
+                convertirURLADataURL(nuevaImagenURL, (dataURL) => {
+                    const nuevaImagen = document.createElement("img");
+                    nuevaImagen.src = dataURL;
+                    nuevaImagen.setAttribute('data-url', dataURL);
+                    nuevaImagen.addEventListener('click', seleccionarImagen);
+                    galeria.appendChild(nuevaImagen);
+
+                    if (galeria.children.length === 1) {
+                        const imagenGenerada = document.getElementById("imagenGenerada");
+                        imagenGenerada.src = dataURL;
+                    }
+
+                    seed++;
+                    setTimeout(generarSiguienteImagen, 0);
+                });
+            }
+
+            generarSiguienteImagen();
+            return {
+                detener: () => {
+                    generando = false;
+                }
+            };
+        };
+
+        function descargarImagen(url, nombre) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombre;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        function descargarSeleccionadas() {
+            const imagenesSeleccionadas = document.querySelectorAll('#image-4-container .seleccionada');
+            if (imagenesSeleccionadas.length === 0) {
+                mostrarMensajeImg4("No hay imágenes seleccionadas para descargar."); // Use Img4 specific message
+                return;
+            }
+
+            const zip = new JSZip();
+            let completedDownloads = 0;
+            const totalImages = imagenesSeleccionadas.length;
+
+            imagenesSeleccionadas.forEach((img, index) => {
+                const url = img.getAttribute('data-url');
+                const nombre = `imagen_seleccionada_${index + 1}.png`;
+
+                fetch(url)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        zip.file(nombre, blob);
+                        completedDownloads++;
+                        if (completedDownloads === totalImages) {
+                            zip.generateAsync({ type: "blob" })
+                                .then(function (content) {
+                                    const a = document.createElement('a');
+                                    a.href = URL.createObjectURL(content);
+                                    a.download = "imagenes_seleccionadas.zip";
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(a.href);
+                                });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error al descargar la imagen seleccionada:", error);
+                        mostrarMensajeImg4("Error al descargar una imagen seleccionada.");
+                    });
+            });
+        };
+
+        function descargarGaleria() {
+            const imagenes = galeriaImagenes.getElementsByTagName('img');
+            if (imagenes.length === 0) {
+                mostrarMensajeImg4("No hay imágenes en la galería para descargar.");
+                return;
+            }
+
+            const zip = new JSZip();
+            let completedDownloads = 0;
+            const totalImages = imagenes.length;
+
+            for (let i = 0; i < totalImages; i++) {
+                const img = imagenes[i];
+                const url = img.getAttribute('data-url');
+                const nombre = `imagen_galeria_${i + 1}.png`;
+
+                fetch(url)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        zip.file(nombre, blob);
+                        completedDownloads++;
+                        if (completedDownloads === totalImages) {
+                            zip.generateAsync({ type: "blob" })
+                                .then(function (content) {
+                                    const a = document.createElement('a');
+                                    a.href = URL.createObjectURL(content);
+                                    a.download = "galeria_de_imagenes.zip";
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(a.href);
+                                });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error al descargar la imagen de la galería:", error);
+                        mostrarMensajeImg4("Error al descargar una imagen de la galería.");
+                    });
+            }
+        };
+
+        function seleccionarImagen(event) {
+            const img = event.target;
+            img.classList.toggle('seleccionada');
+        };
+
+        function mostrarMensajeImg4(mensaje) { // Renamed to avoid conflict
+            let messageDiv = document.getElementById('userMessage'); // This is the one in Image 4 container
+            messageDiv.textContent = mensaje;
+            messageDiv.style.opacity = '1';
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+            }, 3000);
+        };
+
+        // Función para generar un esquema (función genérica, no usada directamente por el nuevo modo)
+        function generarEsquema() {
+            console.log("La función 'generarEsquema' ha sido llamada.");
+            displaySystemMessage("La función 'generarEsquema' se ha ejecutado. Aquí se generaría un esquema.");
+        };
+
+        // Mapa de tipos de diagrama a sus palabras clave y sintaxis Mermaid
+        const diagramTypeMap = {
+            "flujo": { krokiType: "mermaid", mermaidSyntax: "graph TD", promptKeyword: "un flujo o un grafo", geminiInstruction: "Mermaid, usando la sintaxis 'graph TD', para un flujo o un grafo. El diagrama debe resumir los puntos clave de manera muy detallada, sencilla y clara. **Proporciona solo el código Mermaid. Para los nodos, usa el formato ID[TEXTO DEL NODO]. Asegúrate de que TEXTO DEL NODO sea texto plano, sin paréntesis, corchetes, comas, puntos y comas, ni caracteres especiales que puedan ser interpretados como sintaxis Mermaid. Cada línea del diagrama debe ser una declaración válida de nodo o conexión y debe terminar con un punto y coma (;) si no es la última línea del bloque.**", krokiContentType: 'text/plain' },
+            "secuencia": { krokiType: "mermaid", mermaidSyntax: "sequenceDiagram", promptKeyword: "un diagrama de secuencia", geminiInstruction: "Mermaid, usando la sintaxis 'sequenceDiagram', para un diagrama de secuencia. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "clases": { krokiType: "mermaid", mermaidSyntax: "classDiagram", promptKeyword: "un diagrama de clases", geminiInstruction: "Mermaid, usando la sintaxis 'classDiagram', para un diagrama de clases. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "estados": { krokiType: "mermaid", mermaidSyntax: "stateDiagram-v2", promptKeyword: "un diagrama de estados", geminiInstruction: "Mermaid, usando la sintaxis 'stateDiagram-v2', para un diagrama de estados. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "gantt": { krokiType: "mermaid", mermaidSyntax: "gantt", promptKeyword: "un diagrama de Gantt", geminiInstruction: "Mermaid, usando la sintaxis 'gantt', para un diagrama de Gantt. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "tarta": { krokiType: "mermaid", mermaidSyntax: "pie", promptKeyword: "un diagrama de tarta", geminiInstruction: "Mermaid, usando la sintaxis 'pie', para un diagrama de tarta. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "requisitos": { krokiType: "mermaid", mermaidSyntax: "requirementDiagram", promptKeyword: "un diagrama de requisitos", geminiInstruction: "Mermaid, usando la sintaxis 'requirementDiagram', para un diagrama de requisitos. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "git": { krokiType: "mermaid", mermaidSyntax: "gitGraph", promptKeyword: "un diagrama de grafo de Git", geminiInstruction: "Mermaid, usando la sintaxis 'gitGraph', para un diagrama de grafo de Git. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "viaje": { krokiType: "mermaid", mermaidSyntax: "journey", promptKeyword: "un diagrama de viaje de usuario", geminiInstruction: "Mermaid, usando la sintaxis 'journey', para un diagrama de viaje de usuario. Proporciona solo el código Mermaid, sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "nube de palabras": { krokiType: "wordcloud", promptKeyword: "una nube de palabras", geminiInstruction: "una lista de palabras clave y su importancia (peso relativo) para una nube de palabras. La salida debe ser una lista de palabras, cada una seguida de dos puntos y un número (ej. 'palabra:10'), separadas por comas o saltos de línea. No incluyas ningún texto explicativo, solo la lista de palabras y pesos.", krokiContentType: 'text/plain' },
+            "word cloud": { krokiType: "wordcloud", promptKeyword: "una nube de palabras", geminiInstruction: "una lista de palabras clave y su importancia (peso relativo) para una nube de palabras. La salida debe ser una lista de palabras, cada una seguida de dos puntos y un número (ej. 'palabra:10'), separadas por comas o saltos de línea. No incluyas ningún texto explicativo, solo la lista de palabras y pesos.", krokiContentType: 'text/plain' },
+            "blockdiag": { krokiType: "blockdiag", promptKeyword: "un diagrama BlockDiag (de bloques)", geminiInstruction: "BlockDiag para un diagrama de bloques. Proporciona el código BlockDiag sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "bpmn": { krokiType: "bpmn", promptKeyword: "un diagrama BPMN", geminiInstruction: "BPMN para un diagrama de proceso de negocio. Proporciona el código BPMN sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "bytefield": { krokiType: "bytefield", promptKeyword: "un diagrama Bytefield (de campo de bytes)", geminiInstruction: "Bytefield para un diagrama de campo de bytes. Proporciona el código Bytefield sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "seqdiag": { krokiType: "seqdiag", promptKeyword: "un diagrama SeqDiag (de secuencia)", geminiInstruction: "SeqDiag para un diagrama de secuencia. Proporciona el código SeqDiag sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "actdiag": { krokiType: "actdiag", promptKeyword: "un diagrama ActDiag (de actividad)", geminiInstruction: "ActDiag para un diagrama de actividad. Proporciona el código ActDiag sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "nwdiag": { krokiType: "nwdiag", promptKeyword: "un diagrama NwDiag (de red)", geminiInstruction: "NwDiag para un diagrama de red. Proporciona el código NwDiag sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "packetdiag": { krokiType: "packetdiag", promptKeyword: "un diagrama PacketDiag (de paquetes)", geminiInstruction: "PacketDiag para un diagrama de paquetes. Proporciona el código PacketDiag sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "rackdiag": { krokiType: "rackdiag", promptKeyword: "un diagrama RackDiag (de rack)", geminiInstruction: "RackDiag para un diagrama de rack. Proporciona el código RackDiag sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "c4plantuml": { krokiType: "c4plantuml", promptKeyword: "un diagrama C4 con PlantUML", geminiInstruction: "C4 PlantUML para un diagrama C4. Proporciona el código C4 PlantUML sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "d2": { krokiType: "d2", promptKeyword: "un diagrama D2", geminiInstruction: "D2 para un diagrama D2. Proporciona el código D2 sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "dbml": { krokiType: "dbml", promptKeyword: "un diagrama DBML", geminiInstruction: "DBML para un diagrama de base de datos. Proporciona el código DBML sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "ditaa": { krokiType: "ditaa", promptKeyword: "un diagrama Ditaa", geminiInstruction: "Ditaa para un diagrama Ditaa. Proporciona el código Ditaa sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "erd": { krokiType: "erd", promptKeyword: "un diagrama ERD", geminiInstruction: "Erd para un diagrama de entidad-relación. Proporciona el código Erd sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "excalidraw": { krokiType: "excalidraw", promptKeyword: "un diagrama Excalidraw", geminiInstruction: "Excalidraw para un diagrama tipo boceto. Proporciona el código Excalidraw sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "graphviz": { krokiType: "graphviz", promptKeyword: "un diagrama GraphViz", geminiInstruction: "GraphViz para un diagrama de grafo. Proporciona el código GraphViz sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "nomnoml": { krokiType: "nomnoml", promptKeyword: "un diagrama Nomnoml", geminiInstruction: "Nomnoml para un diagrama Nomnoml. Proporciona el código Nomnoml sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "pikchr": { krokiType: "pikchr", promptKeyword: "un diagrama Pikchr", geminiInstruction: "Pikchr para un diagrama Pikchr. Proporciona el código Pikchr sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "plantuml": { krokiType: "plantuml", promptKeyword: "un diagrama PlantUML", geminiInstruction: "PlantUML para un diagrama PlantUML. Proporciona el código PlantUML sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "structurizr": { krokiType: "structurizr", promptKeyword: "un diagrama Structurizr", geminiInstruction: "Structurizr para un diagrama Structurizr. Proporciona el código Structurizr sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "svgbob": { krokiType: "svgbob", promptKeyword: "un diagrama Svgbob", geminiInstruction: "Svgbob para un diagrama ASCII. Proporciona el código Svgbob sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "symbolator": { krokiType: "symbolator", promptKeyword: "un diagrama Symbolator", geminiInstruction: "Symbolator para un diagrama Symbolator. Proporciona el código Symbolator sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "tikz": { krokiType: "tikz", promptKeyword: "un diagrama TikZ", geminiInstruction: "TikZ para un diagrama TikZ. Proporciona el código TikZ sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "umlet": { krokiType: "umlet", promptKeyword: "un diagrama UMlet", geminiInstruction: "UMlet para un diagrama UMlet. Proporciona el código UMlet sin explicaciones ni texto adicional.", krokiContentType: 'text/plain' },
+            "vega": { krokiType: "vega", promptKeyword: "un diagrama Vega", geminiInstruction: "Vega para un diagrama Vega. Proporciona el código Vega JSON sin explicaciones ni texto adicional.", krokiContentType: 'application/json' },
+            "vega-lite": { krokiType: "vegalite", promptKeyword: "un diagrama Vega-Lite", geminiInstruction: "Vega-Lite para un diagrama Vega-Lite. Proporciona el código Vega-Lite JSON sin explicaciones ni texto adicional.", krokiContentType: 'application/json' },
+            "wavedrom": { krokiType: "wavedrom", promptKeyword: "un diagrama WaveDrom", geminiInstruction: "WaveDrom para un diagrama de forma de onda. Proporciona el código WaveDrom JSON sin explicaciones ni texto adicional.", krokiContentType: 'application/json' },
+            "wireviz": { krokiType: "wireviz", promptKeyword: "un diagrama WireViz", geminiInstruction: "WireViz para un diagrama de cableado. Proporciona el código WireViz YAML sin explicaciones ni texto adicional.", krokiContentType: 'application/x-yaml' }
+        };
+
+        // Función para generar un esquema interactivo en HTML usando la API de Gemini y Kroki
+        async function generarEsquemaInteractivoHTML(message) {
+            let topic = message;
+            let krokiDiagramType = "mermaid"; // Default Kroki type
+            let mermaidSyntax = "graph TD"; // Default Mermaid syntax for flowcharts
+            let promptKeyword = "un flujo o un grafo";
+            let geminiInstruction = diagramTypeMap["flujo"].geminiInstruction; // Default instruction
+            let krokiContentType = 'text/plain';
+            const MAX_SCHEMA_RETRIES = 9; // Max retries for schema generation (total 10 attempts: 1 initial + 9 retries)
+
+            let foundType = false;
+            for (const [key, value] of Object.entries(diagramTypeMap)) {
+                // Create a regex to match the diagram type, making it flexible for "diagrama de X sobre Y" or just "X sobre Y"
+                // Also handle "nube de palabras" and "word cloud" specifically
+                // The regex now looks for the specific key (e.g., "blockdiag", "nube de palabras")
+                // or common descriptive phrases (e.g., "diagrama de flujo", "diagrama de bloques")
+                const commonPhraseRegex = new RegExp(`(?:diagrama de\\s+)?(${key.replace(/-/g, '\\s*-?')})\\s+sobre\\s+(.+)`, 'i');
+                const directMatch = message.match(new RegExp(`^(${key})\\s+sobre\\s+(.+)`, 'i'));
+                const phraseMatch = message.match(commonPhraseRegex);
+
+                let match = null;
+                if (directMatch) {
+                    match = directMatch;
+                } else if (phraseMatch) {
+                    match = phraseMatch;
+                }
+
+                if (match) {
+                    krokiDiagramType = value.krokiType;
+                    if (value.mermaidSyntax) {
+                        mermaidSyntax = value.mermaidSyntax;
+                    }
+                    promptKeyword = value.promptKeyword;
+                    geminiInstruction = value.geminiInstruction;
+                    krokiContentType = value.krokiContentType; // Set the correct content type
+                    topic = match[2].trim(); // Extract the actual topic
+                    foundType = true;
+                    break; // Found a match, stop checking
+                }
+            }
+
+            // If no specific diagram type is mentioned, assume the whole message is the topic for a default flowchart
+            if (!foundType) {
+                topic = message;
+                // Defaults are already set
+            }
+
+            displaySystemMessage(`Generando ${promptKeyword} para: "${topic}"...`);
+
+            let geminiPromptForDiagram;
+            if (krokiDiagramType === "wordcloud") {
+                geminiPromptForDiagram = `Genera ${geminiInstruction} sobre "${topic}".`;
+            } else if (krokiDiagramType === "mermaid") {
+                geminiPromptForDiagram = `Genera una descripción de diagrama en formato ${geminiInstruction.replace('Mermaid, usando la sintaxis \'graph TD\', para un flujo o un grafo.', mermaidSyntax ? `Mermaid, usando la sintaxis '${mermaidSyntax}', para ${promptKeyword}.` : `Mermaid, para ${promptKeyword}.`)} sobre "${topic}".`;
+                // Add a more restrictive instruction for node text to prevent syntax errors
+                geminiPromptForDiagram += " Para los nodos, usa el formato ID[TEXTO_DEL_NODO]. Asegúrate de que TEXTO_DEL_NODO sea texto plano, sin paréntesis, corchetes anidados, comas, puntos y comas, ni caracteres especiales como /, \\, #, &, *, +, -, {}, [], <>, \"\", '', que puedan ser interpretados como sintaxis Mermaid o HTML. Cada línea del diagrama debe ser una declaración válida de nodo o conexión y debe terminar con un punto y coma (;) si no es la última línea del bloque. No incluyas ningún texto explicativo, solo el código Mermaid.";
+            } else {
+                // For other Kroki types, ask Gemini to generate the specific language code
+                geminiPromptForDiagram = `Genera el código ${krokiDiagramType} para ${geminiInstruction} sobre "${topic}". Proporciona solo el código, sin explicaciones ni texto adicional.`;
+            }
+
+
+            const geminiPayload = {
+                contents: [{ role: 'user', parts: [{ text: geminiPromptForDiagram }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    topP: 0.95,
+                    topK: 40,
+                    maxOutputTokens: 2048,
+                },
+            };
+
+            let diagramSourceCode = '';
+            let geminiApiSuccess = false;
+
+            for (let i = 0; i <= MAX_SCHEMA_RETRIES; i++) {
+                try {
+                    const geminiResponse = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(geminiPayload)
+                    });
+
+                    if (!geminiResponse.ok) {
+                        const errorText = await geminiResponse.text();
+                        console.error(`Intento ${i + 1} fallido de API de Gemini (Generación de código de diagrama):`, geminiResponse.status, geminiResponse.statusText, errorText);
+                        if (i < MAX_SCHEMA_RETRIES) {
+                            // Don't display error message on intermediate retries
+                            continue; // Try again
+                        } else {
+                            throw new Error(`Error de API (Generación de código de diagrama): ${geminiResponse.status} ${geminiResponse.statusText} - ${errorText}`);
+                        }
+                    }
+
+                    const geminiData = await geminiResponse.json();
+
+                    if (geminiData.candidates && geminiData.candidates.length > 0 &&
+                        geminiData.candidates[0].content && geminiData.candidates[0].content.parts &&
+                        geminiData.candidates[0].content.parts.length > 0) {
+                        diagramSourceCode = geminiData.candidates[0].content.parts[0].text.trim();
+                        console.log(`Intento ${i + 1} exitoso. Código fuente del diagrama de Gemini:`, diagramSourceCode);
+                        geminiApiSuccess = true;
+                        break; // Success, break out of the retry loop
+                    } else {
+                        console.warn(`Intento ${i + 1} fallido: No se encontraron candidatos válidos en la respuesta de Gemini.`);
+                        if (i < MAX_SCHEMA_RETRIES) {
+                            continue; // Try again
+                        } else {
+                            throw new Error('Gemini no pudo generar el código del diagrama después de múltiples intentos.');
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Intento ${i + 1} fallido con excepción:`, error);
+                    if (i < MAX_SCHEMA_RETRIES) {
+                        continue; // Try again
+                    } else {
+                        displaySystemMessage('Error: No se pudo generar el código del esquema después de múltiples intentos. Nuestro servidor falló o el modelo no respondió como se esperaba.');
+                        messageInput.value = message; // Restore message text on error
+                        return; // Exit function on final failure
+                    }
+                }
+            }
+
+
+            if (!geminiApiSuccess) {
+                // This case should ideally be caught by the last `throw new Error` in the loop, but as a fallback:
+                displaySystemMessage('Error: No se pudo generar el código del esquema después de múltiples intentos. Nuestro servidor falló o el modelo no respondió como se esperaba.');
+                messageInput.value = message;
+                return;
+            }
+
+
+            // Remove Markdown code block delimiters if Gemini adds them
+            if (diagramSourceCode.startsWith('```') && diagramSourceCode.endsWith('```')) {
+                const lines = diagramSourceCode.split('\n');
+                if (lines.length > 2 && lines[0].startsWith('```') && lines[lines.length - 1] === '```') {
+                    diagramSourceCode = lines.slice(1, -1).join('\n').trim();
+                }
+            }
+
+            try {
+                // Paso 2: Enviar el código fuente del diagrama a la API de Kroki
+                const krokiUrl = `https://kroki.io/${krokiDiagramType}/svg`; // Use krokiDiagramType here
+                const krokiResponse = await fetch(krokiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': krokiContentType }, // Use dynamic content type
+                    body: diagramSourceCode
+                });
+
+                if (!krokiResponse.ok) {
+                    const errorText = await krokiResponse.text();
+                    console.error('API response not OK (Generación de diagrama de Kroki):', krokiResponse.status, krokiResponse.statusText, errorText);
+                    throw new Error(`Error de API (Generación de diagrama de Kroki): ${krokiResponse.status} ${krokiResponse.statusText} - ${errorText}`);
+                }
+
+                const diagramSvg = await krokiResponse.text(); // Kroki devuelve SVG directamente
+
+                // Paso 3: Mostrar el SVG en el iframe de previsualización HTML
+                htmlPreviewTextarea.value = diagramSvg; // Almacenar SVG en el textarea
+                const iframeDoc = htmlPreviewIframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(diagramSvg);
+                iframeDoc.close();
+
+                // Mostrar la pestaña de previsualización HTML
+                showTab('tab-content-html-preview');
+                archivoMenu.classList.add('active'); // Asegurarse de que el menú esté abierto
+
+                // Paso 4: Mostrar el mensaje de confirmación en el chat (sin el código del diagrama)
+                let chatDisplayMessage = `¡${promptKeyword.charAt(0).toUpperCase() + promptKeyword.slice(1)} para "${topic}" generado con éxito! Puedes verlo en la pestaña 'Previsualizar HTML' del menú 'MAS'.`;
+
+                let responseHtml = showdownConverter.makeHtml(chatDisplayMessage);
+                // Aplicar KaTeX y resaltado de código como antes (aunque para este mensaje no hay código)
+                responseHtml = responseHtml.replace(/(-b ± √(b² - 4ac)) \/ 2a/g, '<span class="katex">\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}</span>');
+                responseHtml = responseHtml.replace(/x\^2/g, '<span class="katex">x^2</span>');
+                responseHtml = responseHtml.replace(/a\/b/g, '<span class="katex">\\frac{a}{b}</span>');
+                responseHtml = responseHtml.replace(/\\sqrt\{(\w+)\}/g, '<span class="katex">\\sqrt{$1}</span>');
+                responseHtml = responseHtml.replace(/\\sqrt\{(b\^2 - 4ac)\}/g, '<span class="katex">\\sqrt{b^2 - 4ac}</span>');
+                responseHtml = responseHtml.replace(/(\\frac\{\w+\}\{\w+\})/g, '<span class="katex">$1</span>');
+                responseHtml = responseHtml.replace(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g, (match, code) => {
+                    const highlightedCode = highlightCode(code.trim());
+                    return `<pre><code class="code-block">${highlightedCode}</code></pre>`;
+                });
+
+                const geminiMessageDiv = document.createElement('div');
+                geminiMessageDiv.className = 'gemini-message';
+                geminiMessageDiv.innerHTML = responseHtml;
+                chatContainer.appendChild(geminiMessageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                // Almacenar la respuesta textual del modelo en el historial
+                history.push({ role: 'model', parts: [{ text: chatDisplayMessage }] });
+
+                // Clear file data on successful generation
+                fileDataArray = [];
+                fileInput.value = '';
+                renderAllUploadedLists(); // Update file list display
+
+            } catch (error) {
+                console.error('Error al generar diagrama interactivo con Kroki:', error);
+                displaySystemMessage('Error: No se pudo generar el diagrama interactivo. Inténtalo de nuevo. Asegúrate de que el tema sea claro y que la sintaxis de tu solicitud sea correcta.');
+                messageInput.value = message; // Restore message text on error
+            }
+        };
+
+        // Helper function to recursively build the HTML for the schema (no longer used for Kroki diagrams directly)
+        function buildInteractiveSchemaHtml(data) {
+            let html = '';
+            // This function is now mostly a placeholder as Kroki generates the full SVG.
+            // If we were to interpret Kroki's output and make it interactive with JS, this would be more complex.
+            // For now, it's just a basic wrapper for the SVG.
+            html += `
+                <div style="text-align: center; margin-top: 20px;">
+                    <h3>Diagrama Generado por Kroki</h3>
+                    </div>
+            `;
+            return html;
+        };
+
+
+        // --- Start of existing 'esquemas' function (kept for compatibility) ---
+        function esquemas() {
+            console.log("La función 'esquemas' ha sido llamada.");
+            displaySystemMessage("La función 'esquemas' se ha ejecutado. Esta es una función genérica para esquemas. Para generar un diagrama interactivo, activa el 'Modo Esquema' y proporciona un tema.");
+        };
+        // --- End of existing 'esquemas' function ---
+
+        function initializeImage4App() {
+            if (!imagenGenerada.src || imagenGenerada.src.includes("placehold.co")) {
+                convertirURLADataURL(generarURLImagen("Imagen 4", currentSeed, modeloSelector.value), (dataURL) => {
+                    imagenGenerada.src = dataURL;
+                });
+            }
+
+            if (!generarImagenBtn.dataset.listenerAdded) {
+                generarImagenBtn.addEventListener("click", () => {
+                    const mensaje = mensajeInputImg4.value.trim(); // Use renamed input
+                    const modeloSeleccionado = modeloSelector.value;
+                    if (mensaje) {
+                        currentSeed = 0;
+                        const nuevaImagenURL = generarURLImagen(mensaje, currentSeed, modeloSeleccionado);
+                        convertirURLADataURL(nuevaImagenURL, (dataURL) => {
+                            imagenGenerada.src = dataURL;
+                            const nuevaImagen = document.createElement("img");
+                            nuevaImagen.src = dataURL;
+                            nuevaImagen.setAttribute('data-url', dataURL);
+                            nuevaImagen.addEventListener('click', seleccionarImagen);
+                            galeriaImagenes.appendChild(nuevaImagen);
+                        });
+                    } else {
+                        mostrarMensajeImg4("Por favor, introduce un mensaje antes de generar la imagen.");
+                    }
+                });
+                generarImagenBtn.dataset.listenerAdded = true;
+            }
+
+            if (!variarImagenBtn.dataset.listenerAdded) {
+                variarImagenBtn.addEventListener("click", () => {
+                    const mensaje = mensajeInputImg4.value.trim(); // Use renamed input
+                    const modeloSeleccionado = modeloSelector.value;
+                    if (mensaje) {
+                        currentSeed = generarNumeroAleatorio();
+                        const nuevaImagenURL = generarURLImagen(mensaje, currentSeed, modeloSeleccionado);
+                        convertirURLADataURL(nuevaImagenURL, (dataURL) => {
+                            imagenGenerada.src = dataURL;
+                            const nuevaImagen = document.createElement("img");
+                            nuevaImagen.src = dataURL;
+                            nuevaImagen.setAttribute('data-url', dataURL);
+                            nuevaImagen.addEventListener('click', seleccionarImagen);
+                            galeriaImagenes.appendChild(nuevaImagen);
+                        });
+                    } else {
+                        mostrarMensajeImg4("Por favor, introduce un mensaje antes de generar la imagen.");
+                    }
+                });
+                variarImagenBtn.dataset.listenerAdded = true;
+            }
+
+            if (!variacionAlgoritmicaBtn.dataset.listenerAdded) {
+                variacionAlgoritmicaBtn.addEventListener("click", () => {
+                    const mensaje = mensajeInputImg4.value.trim(); // Use renamed input
+                    const modeloSeleccionado = modeloSelector.value;
+                    if (mensaje) {
+                        galeriaImagenes.innerHTML = '';
+                        generacionContinua = generarVariacionesAlgoritmicas(mensaje, modeloSeleccionado);
+                        variacionAlgoritmicaBtn.style.display = "none";
+                        pararVariacionBtn.style.display = "inline-block";
+                        galeriaImagenes.style.display = "flex";
+                        verBibliotecaBtn.style.display = "none";
+                        ocultarBibliotecaBtn.style.display = "inline-block";
+                    } else {
+                        mostrarMensajeImg4("Por favor, introduce un mensaje antes de generar la imagen.");
+                    }
+                });
+                variacionAlgoritmicaBtn.dataset.listenerAdded = true;
+            }
+
+            if (!pararVariacionBtn.dataset.listenerAdded) {
+                pararVariacionBtn.addEventListener("click", () => {
+                    if (generacionContinua) {
+                        generacionContinua.detener();
+                    }
+                    pararVariacionBtn.style.display = "none";
+                    variacionAlgoritmicaBtn.style.display = "inline-block";
+                });
+                pararVariacionBtn.dataset.listenerAdded = true;
+            }
+
+            if (!verBibliotecaBtn.dataset.listenerAdded) {
+                verBibliotecaBtn.addEventListener("click", () => {
+                    galeriaImagenes.style.display = "flex";
+                    verBibliotecaBtn.style.display = "none";
+                    ocultarBibliotecaBtn.style.display = "inline-block";
+                });
+                verBibliotecaBtn.dataset.listenerAdded = true;
+            }
+
+            if (!ocultarBibliotecaBtn.dataset.listenerAdded) {
+                ocultarBibliotecaBtn.addEventListener("click", () => {
+                    galeriaImagenes.style.display = "none";
+                    verBibliotecaBtn.style.display = "inline-block";
+                    ocultarBibliotecaBtn.style.display = "none";
+                });
+                ocultarBibliotecaBtn.dataset.listenerAdded = true;
+            }
+
+            if (!descargarImagenBtn.dataset.listenerAdded) {
+                descargarImagenBtn.addEventListener("click", () => {
+                    descargarImagen(imagenGenerada.src, 'imagen_generada.png');
+                });
+                descargarImagenBtn.dataset.listenerAdded = true;
+            }
+
+            if (!descargarGaleriaBtn.dataset.listenerAdded) {
+                descargarGaleriaBtn.addEventListener("click", () => {
+                    descargarGaleria();
+                });
+                descargarGaleriaBtn.dataset.listenerAdded = true;
+            }
+
+            if (!descargarSeleccionadasBtn.dataset.listenerAdded) {
+                descargarSeleccionadasBtn.addEventListener("click", () => {
+                    descargarSeleccionadas();
+                });
+                descargarSeleccionadasBtn.dataset.listenerAdded = true;
+            }
+
+            if (!backToChatButton.dataset.listenerAdded) {
+                backToChatButton.addEventListener("click", () => {
+                    showChatMode();
+                });
+                backToChatButton.dataset.listenerAdded = true;
+            }
+        };
+
+
+        window.onload = function () {
+            renderMath();
+            chatContainer.style.fontSize = fontSizeSelector.value + 'px';
+            updateInputPlaceholder();
+            showChatMode();
+            // Uncomment the line below to call 'esquemas()' when the page loads
+            // esquemas();
+            // Uncomment the line below to call 'generarEsquema()' when the page loads
+            // generarEsquema();
+        };
+    </script>
+</body>
+
+</html>
