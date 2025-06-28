@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertidor ODT a Word</title>
+    <!-- Incluye Tailwind CSS CDN para el estilo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define la fuente Inter para todo el cuerpo */
+        body {
+            font-family: "Inter", sans-serif;
+        }
+        /* Animación básica para el spinner de carga */
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+            Convertidor ODT a Word
+        </h1>
+
+        <div class="mb-6">
+            <label for="fileInput" class="block text-gray-700 text-sm font-semibold mb-2">
+                Selecciona un archivo ODT:
+            </label>
+            <input
+                type="file"
+                id="fileInput"
+                accept=".odt"
+                class="block w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <!-- Elemento para mostrar el nombre del archivo seleccionado -->
+            <p id="selectedFileNameDisplay" class="mt-2 text-sm text-gray-600 hidden">
+                Archivo seleccionado: <span class="font-medium" id="fileNameSpan"></span>
+            </p>
+        </div>
+
+        <button
+            id="convertButton"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            disabled
+        >
+            <!-- Icono de spinner SVG (equivalente a RefreshCw de Lucide React) -->
+            <span id="buttonSpinner" class="hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin mr-2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                </svg>
+            </span>
+            <span id="buttonText">Convertir ODT a Word</span>
+        </button>
+
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+            <!-- Mensaje de estado -->
+            <p id="statusMessage" class="text-gray-700 font-medium mb-2">Selecciona un archivo ODT para empezar.</p>
+            <!-- Enlace de descarga (inicialmente oculto) -->
+            <a
+                id="downloadLink"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 mt-2 hidden"
+            >
+                Descargar archivo DOCX
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Clave API de Convertio (hardcodeada, para uso de demostración)
+        const apiKey = '92acfb63a4e23c4630899a3f5f1616f0';
+
+        // Referencias a los elementos del DOM
+        const fileInput = document.getElementById('fileInput');
+        const selectedFileNameDisplay = document.getElementById('selectedFileNameDisplay');
+        const fileNameSpan = document.getElementById('fileNameSpan');
+        const convertButton = document.getElementById('convertButton');
+        const buttonSpinner = document.getElementById('buttonSpinner');
+        const buttonText = document.getElementById('buttonText');
+        const statusMessageDisplay = document.getElementById('statusMessage');
+        const downloadLink = document.getElementById('downloadLink');
+
+        // Variables de estado (equivalentes a los useState de React)
+        let selectedFile = null;
+        let odtToDocxJobId = null;
+        let docxDownloadUrl = null;
+        let isLoading = false;
+        let pollIntervalId = null;
+        let currentStep = 'selectFile'; // 'selectFile', 'uploadingOdt', 'convertingOdtToDocx', 'finished'
+
+        // Función para actualizar el estado de carga en la UI
+        function setIsLoadingState(loading) {
+            isLoading = loading;
+            if (isLoading) {
+                convertButton.disabled = true;
+                buttonSpinner.classList.remove('hidden');
+            } else {
+                convertButton.disabled = !selectedFile; // Habilita si hay archivo seleccionado
+                buttonSpinner.classList.add('hidden');
+            }
+        }
+
+        // Función para actualizar el mensaje de estado en la UI
+        function setStatusMessage(message) {
+            statusMessageDisplay.innerText = message;
+        }
+
+        // Manejador para el cambio de archivo
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.endsWith('.odt')) {
+                selectedFile = file;
+                fileNameSpan.innerText = file.name;
+                selectedFileNameDisplay.classList.remove('hidden');
+                setStatusMessage(`Archivo seleccionado: ${file.name}`);
+                convertButton.disabled = false; // Habilitar el botón una vez que se selecciona un archivo válido
+
+                // Resetear estados de conversión al seleccionar un nuevo archivo
+                odtToDocxJobId = null;
+                docxDownloadUrl = null;
+                downloadLink.classList.add('hidden');
+                currentStep = 'selectFile';
+            } else {
+                selectedFile = null;
+                fileNameSpan.innerText = '';
+                selectedFileNameDisplay.classList.add('hidden');
+                setStatusMessage('Por favor, selecciona un archivo .odt válido.');
+                convertButton.disabled = true; // Deshabilitar el botón si el archivo no es válido
+
+                // Resetear estados de conversión
+                odtToDocxJobId = null;
+                docxDownloadUrl = null;
+                downloadLink.classList.add('hidden');
+                currentStep = 'selectFile';
+            }
+            setIsLoadingState(false); // Asegurarse de que el spinner no esté activo al cambiar de archivo
+            buttonText.innerText = 'Convertir ODT a Word';
+        });
+
+        // Función para subir un archivo local y comenzar un trabajo de conversión (ODT a DOCX)
+        async function uploadLocalFile(file, outputFormat) {
+            if (!file) return null;
+
+            setIsLoadingState(true);
+            currentStep = 'uploadingOdt';
+            setStatusMessage(`Subiendo archivo ODT para convertir a ${outputFormat}...`);
+            buttonText.innerText = 'Subiendo ODT...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('filename', file.name);
+            formData.append('outputformat', outputFormat);
+            formData.append('inputformat', 'odt');
+
+            try {
+                const response = await fetch('https://api.convertio.co/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'ok') {
+                    setStatusMessage(`Archivo subido. ID del trabajo: ${data.data.id}. Esperando conversión a ${outputFormat}...`);
+                    return data.data.id;
+                } else {
+                    setStatusMessage(`Error al subir el archivo para ${outputFormat}: ${data.message || 'Error desconocido'}`);
+                    setIsLoadingState(false);
+                    return null;
+                }
+            } catch (error) {
+                setStatusMessage(`Error de red al subir para ${outputFormat}: ${error.message}`);
+                setIsLoadingState(false);
+                return null;
+            }
+        }
+
+        // Función genérica para comprobar el estado de un trabajo
+        async function checkJobStatus(jobId, successCallback, failureCallback) {
+            if (!jobId) return;
+
+            try {
+                const response = await fetch(`https://api.convertio.co/convert/status/${jobId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'ok') {
+                    setStatusMessage(`Estado actual: ${data.data.status}...`);
+                    buttonText.innerText = `Convirtiendo ODT a DOCX...`;
+                    if (data.data.status === 'finished') {
+                        clearInterval(pollIntervalId); // Detener el sondeo actual
+                        setIsLoadingState(false);
+                        successCallback(data.data.result);
+                    } else if (data.data.status === 'failed') {
+                        clearInterval(pollIntervalId); // Detener el sondeo
+                        setIsLoadingState(false);
+                        failureCallback(data.data.error || 'Error desconocido');
+                    }
+                } else {
+                    clearInterval(pollIntervalId); // Detener el sondeo
+                    setIsLoadingState(false);
+                    failureCallback(data.message || 'Error desconocido al comprobar estado');
+                }
+            } catch (error) {
+                clearInterval(pollIntervalId); // Detener el sondeo
+                setIsLoadingState(false);
+                failureCallback(`Error de red al comprobar estado: ${error.message}`);
+            }
+        }
+
+        // Manejador principal para iniciar el proceso de conversión de ODT a DOCX
+        convertButton.addEventListener('click', async () => {
+            if (!selectedFile) {
+                setStatusMessage('Por favor, selecciona un archivo .odt para comenzar.');
+                return;
+            }
+
+            // Resetear estados anteriores
+            odtToDocxJobId = null;
+            docxDownloadUrl = null;
+            downloadLink.classList.add('hidden');
+            setIsLoadingState(true);
+            currentStep = 'uploadingOdt';
+            buttonText.innerText = 'Subiendo ODT...';
+
+
+            setStatusMessage('Convirtiendo ODT a DOCX...');
+            const job1Id = await uploadLocalFile(selectedFile, 'docx');
+            if (job1Id) {
+                odtToDocxJobId = job1Id;
+                // Limpiar cualquier intervalo de sondeo anterior para evitar duplicados
+                if (pollIntervalId) {
+                    clearInterval(pollIntervalId);
+                }
+                pollIntervalId = setInterval(() => {
+                    checkJobStatus(
+                        job1Id,
+                        (result) => {
+                            // Éxito en la conversión de ODT a DOCX
+                            if (result && result.url) {
+                                docxDownloadUrl = result.url; // Establecer la URL de descarga para el DOCX
+                                setStatusMessage('¡Conversión completada! Descarga tu archivo DOCX.');
+                                downloadLink.href = docxDownloadUrl;
+                                downloadLink.classList.remove('hidden');
+                                setIsLoadingState(false);
+                                currentStep = 'finished';
+                                buttonText.innerText = 'Convertir ODT a Word'; // Restaurar texto del botón
+                            } else {
+                                setStatusMessage('Error: Conversión ODT a DOCX finalizada, pero URL de DOCX no encontrada.');
+                                setIsLoadingState(false);
+                                buttonText.innerText = 'Convertir ODT a Word';
+                            }
+                        },
+                        (error) => {
+                            // Fallo en la conversión de ODT a DOCX
+                            setStatusMessage(`Error en la conversión (ODT a DOCX): ${error}`);
+                            setIsLoadingState(false);
+                            buttonText.innerText = 'Convertir ODT a Word';
+                        }
+                    );
+                }, 3000); // Sondear cada 3 segundos
+            }
+        });
+
+        // Habilitar/deshabilitar el botón al cargar la página
+        window.onload = () => {
+            convertButton.disabled = !selectedFile;
+        };
+    </script>
+</body>
+</html>
