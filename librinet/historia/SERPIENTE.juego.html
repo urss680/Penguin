@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Snake</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        canvas {
+            border: 2px solid #000;
+        }
+        h1 {
+            margin: 0;
+        }
+        #score {
+            font-size: 24px;
+        }
+        #restart {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Serpiente</h1>
+    <div id="score">Puntos: 0</div>
+    <canvas id="snakeGame" width="400" height="400"></canvas>
+    <button id="restart">Reiniciar</button>
+    <script>
+        const canvas = document.getElementById('snakeGame');
+        const ctx = canvas.getContext('2d');
+
+        const box = 20;
+        let playerSnake, direction, food, score, game;
+        let timeLimit = 30; // 30 segundos
+        let timer;
+
+        function init() {
+            playerSnake = [{ x: 9 * box, y: 9 * box }];
+            direction = 'RIGHT';
+            score = 0;
+            clearInterval(game);
+            food = generateFood();
+            document.getElementById('score').innerText = `Puntos: ${score}`;
+            game = setInterval(draw, 100);
+            startTimer();
+        }
+
+        function generateFood() {
+            return {
+                x: Math.floor(Math.random() * 19) * box,
+                y: Math.floor(Math.random() * 19) * box
+            };
+        }
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowLeft" && direction !== 'RIGHT') direction = 'LEFT';
+            else if (event.key === "ArrowUp" && direction !== 'DOWN') direction = 'UP';
+            else if (event.key === "ArrowRight" && direction !== 'LEFT') direction = 'RIGHT';
+            else if (event.key === "ArrowDown" && direction !== 'UP') direction = 'DOWN';
+        });
+
+        function startTimer() {
+            let timeRemaining = timeLimit;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                if (timeRemaining <= 0) {
+                    clearInterval(timer);
+                    clearInterval(game);
+                    alert("¡Tiempo terminado! Puntuación final: " + score);
+                } else {
+                    timeRemaining--;
+                }
+            }, 1000);
+        }
+
+        function draw() {
+            ctx.fillStyle = "#f0f0f0";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibuja la serpiente del jugador
+            for (let i = 0; i < playerSnake.length; i++) {
+                ctx.fillStyle = (i === 0) ? "green" : "lightgreen";
+                ctx.fillRect(playerSnake[i].x, playerSnake[i].y, box, box);
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(playerSnake[i].x, playerSnake[i].y, box, box);
+            }
+
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            let playerX = playerSnake[0].x;
+            let playerY = playerSnake[0].y;
+
+            if (direction === 'LEFT') playerX -= box;
+            if (direction === 'UP') playerY -= box;
+            if (direction === 'RIGHT') playerX += box;
+            if (direction === 'DOWN') playerY += box;
+
+            if (playerX === food.x && playerY === food.y) {
+                food = generateFood();
+                score++;
+            } else {
+                playerSnake.pop();
+            }
+
+            let newPlayerHead = { x: playerX, y: playerY };
+
+            if (playerX < 0 || playerY < 0 || playerX >= canvas.width || playerY >= canvas.height || collision(newPlayerHead, playerSnake)) {
+                clearInterval(game);
+                clearInterval(timer);
+                alert("Game Over");
+            }
+
+            playerSnake.unshift(newPlayerHead);
+            document.getElementById('score').innerText = `Puntos: ${score}`;
+        }
+
+        function collision(head, array) {
+            for (let i = 0; i < array.length; i++) {
+                if (head.x === array[i].x && head.y === array[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        document.getElementById('restart').addEventListener('click', init);
+
+        init();
+    </script>
+</body>
+</html>
